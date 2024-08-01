@@ -43,6 +43,64 @@ enable_sub_modules()
 
 pub.save_state_dir = plugin_dir .. separator .. pub.get_require_path() .. separator .. "state" .. separator
 
+---@type NotificationSettings
+local default_notifications = {
+	on_save = false,
+	on_periodic_save = false,
+	on_error = true,
+}
+
+--- Changes the default notification settings
+---@param settings NotificationSettings
+function pub.notification(settings)
+	for key, value in pairs(settings) do
+		if default_notifications[key] ~= nil then
+			default_notifications[key] = value
+		end
+	end
+end
+
+--- Send toast notification
+--- @param window MuxWindow
+--- @param message string
+--- @param error string
+local function send_toast(window, message, error)
+	if error ~= "" then
+		window:toast_notification("WezTerm Workspace " .. message .. "succeeded.", nil, 4000)
+	else
+		window:toast_notification("WezTerm Workspace " .. message .. "failed.", error, nil, 4000)
+	end
+end
+
+--- Safely calls a function and returns success, error message, and results.
+--- Also checks the user's notification preferences and sends a notification if needed.
+---@param func function The function to call
+---@param action string The type of action
+---@param window MuxWindow|nil The optional WezTerm window object for sending notifications
+---@param periodic? boolean Whether the function is called from periodic_save
+---@return boolean success Whether the function call succeeded
+---@return string error_message The error message if the call failed
+---@return any ... Additional results from the function call
+local function check_notification(func, action, window, periodic)
+	local success, result = pcall(func)
+	local error_message = result or "Unknown error occurred"
+
+	local should_notify = false
+	if action == "save" and not periodic and default_notifications.on_save then
+		should_notify = true
+	elseif action == "save" and periodic and default_notifications.on_periodic_save then
+		should_notify = true
+	elseif action == "error" and default_notifications.on_error then
+		should_notify = true
+	end
+
+	if should_notify and window then
+		send_toast(window, action, error_message)
+	end
+
+	return success, error_message
+end
+
 ---Changes the directory to save the state to
 ---@param directory string
 function pub.change_state_save_dir(directory)
@@ -81,14 +139,22 @@ end
 
 ---save state to a file
 ---@param state workspace_state | window_state | tab_state
+---@param window MuxWindow|nil
 ---@param opt_name? string
-function pub.save_state(state, opt_name)
-	if state.window_states then
-		write_json(get_file_path(state.workspace, "workspace", opt_name), state)
-	elseif state.tabs then
-		write_json(get_file_path(state.workspace, "window", opt_name), state)
-	elseif state.pane_tree then
-		write_json(get_file_path(state.pane_tree.cwd, "tab", opt_name), state)
+---@param periodic? boolean
+function pub.save_state(state, window, opt_name, periodic)
+	local success, error_message = check_notification(function()
+		if state.window_states then
+			write_json(get_file_path(state.workspace, "workspace", opt_name), state)
+		elseif state.tabs then
+			write_json(get_file_path(state.workspace, "window", opt_name), state)
+		elseif state.pane_tree then
+			write_json(get_file_path(state.pane_tree.cwd, "tab", opt_name), state)
+		end
+	end, "save", window, periodic)
+
+	if not success and error_message ~= "" then
+		wezterm.log_info("Error saving state: " .. error_message)
 	end
 end
 
@@ -101,14 +167,16 @@ end
 
 ---Saves the stater after interval in seconds
 ---@param interval_seconds integer
-function pub.periodic_save(interval_seconds)
+---@param window MuxWindow|nil
+function pub.periodic_save(interval_seconds, window)
 	if interval_seconds == nil then
 		interval_seconds = 60 * 15
 	end
 	wezterm.time.call_after(interval_seconds, function()
 		local workspace_state = require("resurrect.workspace_state")
-		pub.save_state(workspace_state.get_workspace_state())
-		pub.periodic_save(interval_seconds)
+		pub.save_state(workspace_state.get_workspace_state(), window, nil, true)
+
+		pub.periodic_save(interval_seconds, window)
 	end)
 end
 

@@ -6,3 +6,5 @@
 ---@alias MuxWindow any
 
 ---@alias restore_opts {relative: boolean?, absolute: boolean?, pane: Pane?, tab: MuxTab?, window: MuxWindow, on_pane_restore: fun(pane_tree: pane_tree)}
+
+---@alias NotificationSettings {on_save: boolean, on_periodic_save: boolean, on_error: boolean}
