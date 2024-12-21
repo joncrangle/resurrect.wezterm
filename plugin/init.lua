@@ -320,13 +320,39 @@ end
 function pub.write_current_state(name, type)
 	local file_path = pub.save_state_dir .. separator .. "current_state.txt"
 	local suc, err = pcall(function()
-		local f = io.open(file_path, "w+")
-		if not f then
+		local file = io.open(file_path, "w+")
+		if not file then
 			error("Could not open file: " .. file_path)
 		end
-		f:write(string.format("%s %s", name, type))
-		f:flush()
-		f:close()
+		file:write(string.format("%s %s", name, type))
+		file:flush()
+		file:close()
+	end)
+	return suc, err
+end
+
+---callback for resurrecting workspaces on startup
+---@return boolean
+---@return string|nil
+function pub.resurrect_on_gui_startup()
+	local file_path = pub.save_state_dir .. separator .. "current_state.txt"
+	local suc, err = pcall(function()
+		local file = io.open(file_path, "r")
+		if not file then
+			error("Could not open file: " .. file_path)
+		end
+		local content = file:read("*all")
+		local name, type = content:match("([^ ]+) ([^ ]+)")
+		file:close()
+		if type == "workspace" then
+			pub.workspace_state.restore_workspace(pub.load_state(name, type), {
+				spawn_in_workspace = true,
+				relative = true,
+				restore_text = true,
+				on_pane_restore = pub.tab_state.default_on_pane_restore,
+			})
+			wezterm.mux.set_active_workspace(name)
+		end
 	end)
 	return suc, err
 end
