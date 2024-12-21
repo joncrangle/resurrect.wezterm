@@ -27,6 +27,9 @@ function pub.restore_workspace(workspace_state, opts)
 				height = window_state.size.rows,
 				cwd = window_state.tabs[1].pane_tree.cwd,
 			}
+			if opts.spawn_in_workspace then
+				spawn_window_args.workspace = workspace_state.workspace
+			end
 			opts.tab, opts.pane, opts.window = wezterm.mux.spawn_window(spawn_window_args)
 		end
 
