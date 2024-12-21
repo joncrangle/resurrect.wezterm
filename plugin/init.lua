@@ -312,6 +312,25 @@ function pub.periodic_save(opts)
 	end)
 end
 
+---Writes the current state name and type
+---@param name string
+---@param type string
+---@return boolean
+---@return string|nil
+function pub.write_current_state(name, type)
+	local file_path = pub.save_state_dir .. separator .. "current_state.txt"
+	local suc, err = pcall(function()
+		local f = io.open(file_path, "w+")
+		if not f then
+			error("Could not open file: " .. file_path)
+		end
+		f:write(string.format("%s %s", name, type))
+		f:flush()
+		f:close()
+	end)
+	return suc, err
+end
+
 ---@alias fmt_fun fun(label: string): string
 ---@alias fuzzy_load_opts {title: string, description: string, fuzzy_description: string, is_fuzzy: boolean, ignore_workspaces: boolean, ignore_tabs: boolean, ignore_windows: boolean, fmt_window: fmt_fun, fmt_workspace: fmt_fun, fmt_tab: fmt_fun }
 
