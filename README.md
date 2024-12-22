@@ -212,9 +212,26 @@ You can add the `opts` table to change the behaviour. It exposes the following o
 `save_windows` will save windows if true otherwise not.
 `save_tabs` will save tabs if true otherwise not.
 
+### Resurrecting on startup
+
+You can resume from where you left off by resurrecting on startup with
+the following addition to your config:
+
+```lua
+wezterm.on("gui-startup", resurrect.resurrect_on_gui_startup)
+```
+
+This will read a file which has been written by the
+`resurrect.write_current_state("workspace name", "workspace")` function.
+
+> [!NOTE]
+> For this to work, you must include a way to write the current workspace,
+> be it via. the `resurrect.periodic_save` event or when changing workspaces.
+
 ### Limiting the amount of output lines saved for a pane
 
-`resurrect.set_max_nlines(number)` will limit each pane to save at most `number` lines to the state.
+`resurrect.set_max_nlines(number)` will limit each pane to save at most
+`number` lines to the state.
 This can improve performance when saving and loading state.
 
 ### save_state options
