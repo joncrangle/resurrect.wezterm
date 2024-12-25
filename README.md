@@ -269,8 +269,8 @@ This plugin emits the following events that you can use for your own callback fu
 - `resurrect.periodic_save(opts)`
 - `resurrect.sanitize_json.start(data)`
 - `resurrect.sanitize_json.finished(data)`
-- `resurrect.save_state.start(file_path)`
-- `resurrect.save_state.finished(file_path)`
+- `resurrect.save_state.start(file_path, event_type)`
+- `resurrect.save_state.finished(file_path, event_type)`
 - `resurrect.tab_state.restore_tab.start`
 - `resurrect.tab_state.restore_tab.finished`
 - `resurrect.window_state.restore_window.start`

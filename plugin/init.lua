@@ -182,8 +182,9 @@ end
 
 ---@param file_path string
 ---@param state table
-local function write_state(file_path, state)
-	wezterm.emit("resurrect.save_state.start", file_path)
+---@param event_type "workspace" | "window" | "tab"
+local function write_state(file_path, state, event_type)
+	wezterm.emit("resurrect.save_state.start", file_path, event_type)
 	local json_state = wezterm.json_encode(state)
 	json_state = sanitize_json(json_state)
 	if pub.encryption.enable then
@@ -209,7 +210,7 @@ local function write_state(file_path, state)
 			wezterm.log_error("Failed to write state: " .. err)
 		end
 	end
-	wezterm.emit("resurrect.save_state.finished", file_path)
+	wezterm.emit("resurrect.save_state.finished", file_path, event_type)
 end
 
 ---@param file_path string
@@ -248,11 +249,11 @@ end
 ---@param opt_name? string
 function pub.save_state(state, opt_name)
 	if state.window_states then
-		write_state(get_file_path(state.workspace, "workspace", opt_name), state)
+		write_state(get_file_path(state.workspace, "workspace", opt_name), state, "workspace")
 	elseif state.tabs then
-		write_state(get_file_path(state.title, "window", opt_name), state)
+		write_state(get_file_path(state.title, "window", opt_name), state, "window")
 	elseif state.pane_tree then
-		write_state(get_file_path(state.title, "tab", opt_name), state)
+		write_state(get_file_path(state.title, "tab", opt_name), state, "tab")
 	end
 end
 
