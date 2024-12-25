@@ -52,12 +52,15 @@ end
 ---@param file_name string
 ---@param type string
 ---@param opt_name string?
+---@param date_fmt string?
 ---@return string
-local function get_file_path(file_name, type, opt_name)
+local function get_file_path(file_name, type, opt_name, date_fmt)
 	if opt_name then
 		file_name = opt_name
 	end
-	return string.format("%s%s" .. separator .. "%s.json", pub.save_state_dir, type, file_name:gsub(separator, "+"))
+	date_fmt = date_fmt and " " .. wezterm.strftime(date_fmt) or ""
+	return string.format("%s%s" .. separator .. "%s%s.json", pub.save_state_dir, type, file_name:gsub(separator, "+"),
+		date_fmt)
 end
 
 ---executes cmd and passes input to stdin
@@ -246,13 +249,14 @@ end
 ---save state to a file
 ---@param state workspace_state | window_state | tab_state
 ---@param opt_name? string
-function pub.save_state(state, opt_name)
+---@param date_fmt? string
+function pub.save_state(state, opt_name, date_fmt)
 	if state.window_states then
-		write_state(get_file_path(state.workspace, "workspace", opt_name), state)
+		write_state(get_file_path(state.workspace, "workspace", opt_name, date_fmt), state)
 	elseif state.tabs then
-		write_state(get_file_path(state.title, "window", opt_name), state)
+		write_state(get_file_path(state.title, "window", opt_name, date_fmt), state)
 	elseif state.pane_tree then
-		write_state(get_file_path(state.title, "tab", opt_name), state)
+		write_state(get_file_path(state.title, "tab", opt_name, date_fmt), state)
 	end
 end
 

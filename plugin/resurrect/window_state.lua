@@ -66,7 +66,10 @@ function pub.restore_window(window, window_state, opts)
 	wezterm.emit("resurrect.window_state.restore_window.finished")
 end
 
-function pub.save_window_action()
+---@param opt_name? string
+---@param date_fmt? string
+function pub.save_window_action(opt_name, date_fmt)
+	date_fmt = date_fmt and wezterm.strftime(date_fmt) or ""
 	return wezterm.action_callback(function(win, pane)
 		local resurrect = wezterm.plugin.require("https://github.com/MLFlexer/resurrect.wezterm")
 		local mux_win = win:mux_window()
@@ -78,7 +81,7 @@ function pub.save_window_action()
 						if title then
 							window:mux_window():set_title(title)
 							local state = pub.get_window_state(mux_win)
-							resurrect.save_state(state)
+							resurrect.save_state(state, opt_name, date_fmt)
 						end
 					end),
 				}),
@@ -86,7 +89,7 @@ function pub.save_window_action()
 			)
 		elseif mux_win:get_title() then
 			local state = pub.get_window_state(mux_win)
-			resurrect.save_state(state)
+			resurrect.save_state(state, opt_name, date_fmt)
 		end
 	end)
 end
