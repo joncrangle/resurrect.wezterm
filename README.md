@@ -219,10 +219,19 @@ This can improve performance when saving and loading state.
 
 ### save_state options
 
-`resurrect.save_state(state, opt_name?, date_fmt?)`, `resurrect.window_state.save_window_action(date_fmt?)` 
-and `resurrect.tab_state.save_tab_action(date_fmt?)` take optional string arguments:
-- `opt_name` which will rename the file to the name of the string.
-- `date_fmt` which will append the current local date/time to the file name according to the [Rust chrono strftime syntax specified](https://docs.rs/chrono/0.4.19/chrono/format/strftime/index.html).
+```lua
+---@param opts { name: string?, date_fmt: string? } | nil
+-- example with optional custom save_state options
+local save_state_opts = {
+  name = "custom_filename", -- rename the file to the name of the string
+  date_fmt = "%Y-%m-%d %H:%M:%S" -- append the current local datetime to the filename
+}
+-- usage
+resurrect.save_state(state, save_state_opts)
+resurrect.window_state.save_window_action(save_state_opts)
+resurrect.tab_state.save_tab_action(save_state_opts)
+```
+`date_fmt` should follow the [Rust chrono strftime syntax specified](https://docs.rs/chrono/0.4.19/chrono/format/strftime/index.html).
 See [wezterm.strftime](https://wezfurlong.org/wezterm/config/lua/wezterm/strftime.html).
 
 ### fuzzy_load opts

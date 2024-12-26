@@ -98,10 +98,8 @@ function pub.restore_tab(tab, tab_state, opts)
 	wezterm.emit("resurrect.tab_state.restore_tab.finished")
 end
 
----@param opt_name? string
----@param date_fmt? string
-function pub.save_tab_action(opt_name, date_fmt)
-	date_fmt = date_fmt and wezterm.strftime(date_fmt) or ""
+---@param opts { name: string?, date_fmt: string? } | nil
+function pub.save_tab_action(opts)
 	return wezterm.action_callback(function(win, pane)
 		local resurrect = wezterm.plugin.require("https://github.com/MLFlexer/resurrect.wezterm")
 		local tab = pane:tab()
@@ -113,7 +111,7 @@ function pub.save_tab_action(opt_name, date_fmt)
 						if title then
 							callback_pane:tab():set_title(title)
 							local state = pub.get_tab_state(tab)
-							resurrect.save_state(state, opt_name, date_fmt)
+							resurrect.save_state(state, opts)
 						end
 					end),
 				}),
@@ -121,7 +119,7 @@ function pub.save_tab_action(opt_name, date_fmt)
 			)
 		elseif tab:get_title() then
 			local state = pub.get_tab_state(tab)
-			resurrect.save_state(state, opt_name, date_fmt)
+			resurrect.save_state(state, opts)
 		end
 	end)
 end

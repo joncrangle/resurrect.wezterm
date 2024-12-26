@@ -51,18 +51,20 @@ end
 
 ---@param file_name string
 ---@param type string
----@param opt_name string?
----@param date_fmt string?
+---@param opts { name: string?, date_fmt: string? } | nil
 ---@return string
-local function get_file_path(file_name, type, opt_name, date_fmt)
-	if opt_name then
-		file_name = opt_name
+local function get_file_path(file_name, type, opts)
+	file_name = file_name:gsub("%s", "+")
+	if opts and opts.name then
+		file_name = opts.name
 	end
-	if date_fmt then
-	    return string.format("%s%s" .. separator .. "%s %s.json", pub.save_state_dir, type, file_name:gsub(separator, "+"),
-		wezterm.strftime(date_fmt))
+	if opts and opts.date_fmt then
+		return string.format("%s%s" .. separator .. "%s %s.json", pub.save_state_dir, type,
+			file_name,
+			wezterm.strftime(opts.date_fmt))
 	else
-		    return string.format("%s%s" .. separator .. "%s.json", pub.save_state_dir, type, file_name:gsub(separator, "+"))
+		return string.format("%s%s" .. separator .. "%s.json", pub.save_state_dir, type,
+			file_name)
   end
 end
 
@@ -188,8 +190,9 @@ end
 
 ---@param file_path string
 ---@param state table
-local function write_state(file_path, state)
-	wezterm.emit("resurrect.save_state.start", file_path)
+---@param event_type "workspace" | "window" | "tab"
+local function write_state(file_path, state, event_type)
+	wezterm.emit("resurrect.save_state.start", file_path, event_type)
 	local json_state = wezterm.json_encode(state)
 	json_state = sanitize_json(json_state)
 	if pub.encryption.enable then
@@ -215,7 +218,7 @@ local function write_state(file_path, state)
 			wezterm.log_error("Failed to write state: " .. err)
 		end
 	end
-	wezterm.emit("resurrect.save_state.finished", file_path)
+	wezterm.emit("resurrect.save_state.finished", file_path, event_type)
 end
 
 ---@param file_path string
@@ -251,15 +254,14 @@ end
 
 ---save state to a file
 ---@param state workspace_state | window_state | tab_state
----@param opt_name? string
----@param date_fmt? string
-function pub.save_state(state, opt_name, date_fmt)
+---@param opts { name: string?, date_fmt: string? } | nil
+function pub.save_state(state, opts)
 	if state.window_states then
-		write_state(get_file_path(state.workspace, "workspace", opt_name, date_fmt), state)
+		write_state(get_file_path(state.workspace, "workspace", opts), state, "workspace")
 	elseif state.tabs then
-		write_state(get_file_path(state.title, "window", opt_name, date_fmt), state)
+		write_state(get_file_path(state.title, "window", opts), state, "window")
 	elseif state.pane_tree then
-		write_state(get_file_path(state.title, "tab", opt_name, date_fmt), state)
+		write_state(get_file_path(state.title, "tab", opts), state, "tab")
 	end
 end
 
