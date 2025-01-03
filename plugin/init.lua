@@ -318,13 +318,13 @@ end
 ---@return boolean
 ---@return string|nil
 function pub.write_current_state(name, type)
-	local file_path = pub.save_state_dir .. separator .. "current_state.txt"
+	local file_path = pub.save_state_dir .. separator .. "current_state"
 	local suc, err = pcall(function()
 		local file = io.open(file_path, "w+")
 		if not file then
 			error("Could not open file: " .. file_path)
 		end
-		file:write(string.format("%s %s", name, type))
+		file:write(string.format("%s\n%s", name, type))
 		file:flush()
 		file:close()
 	end)
@@ -335,14 +335,14 @@ end
 ---@return boolean
 ---@return string|nil
 function pub.resurrect_on_gui_startup()
-	local file_path = pub.save_state_dir .. separator .. "current_state.txt"
+	local file_path = pub.save_state_dir .. separator .. "current_state"
 	local suc, err = pcall(function()
 		local file = io.open(file_path, "r")
 		if not file then
 			error("Could not open file: " .. file_path)
 		end
-		local content = file:read("*all")
-		local name, type = content:match("([^ ]+) ([^ ]+)")
+		local name = file:read("*line")
+		local type = file:read("*line")
 		file:close()
 		if type == "workspace" then
 			pub.workspace_state.restore_workspace(pub.load_state(name, type), {
