@@ -313,6 +313,51 @@ function pub.periodic_save(opts)
 	end)
 end
 
+---Writes the current state name and type
+---@param name string
+---@param type string
+---@return boolean
+---@return string|nil
+function pub.write_current_state(name, type)
+	local file_path = pub.save_state_dir .. separator .. "current_state"
+	local suc, err = pcall(function()
+		local file = io.open(file_path, "w+")
+		if not file then
+			error("Could not open file: " .. file_path)
+		end
+		file:write(string.format("%s\n%s", name, type))
+		file:flush()
+		file:close()
+	end)
+	return suc, err
+end
+
+---callback for resurrecting workspaces on startup
+---@return boolean
+---@return string|nil
+function pub.resurrect_on_gui_startup()
+	local file_path = pub.save_state_dir .. separator .. "current_state"
+	local suc, err = pcall(function()
+		local file = io.open(file_path, "r")
+		if not file then
+			error("Could not open file: " .. file_path)
+		end
+		local name = file:read("*line")
+		local type = file:read("*line")
+		file:close()
+		if type == "workspace" then
+			pub.workspace_state.restore_workspace(pub.load_state(name, type), {
+				spawn_in_workspace = true,
+				relative = true,
+				restore_text = true,
+				on_pane_restore = pub.tab_state.default_on_pane_restore,
+			})
+			wezterm.mux.set_active_workspace(name)
+		end
+	end)
+	return suc, err
+end
+
 ---@alias fmt_fun fun(label: string): string
 ---@alias fuzzy_load_opts {title: string, description: string, fuzzy_description: string, is_fuzzy: boolean, ignore_workspaces: boolean, ignore_tabs: boolean, ignore_windows: boolean, fmt_window: fmt_fun, fmt_workspace: fmt_fun, fmt_tab: fmt_fun }
 
