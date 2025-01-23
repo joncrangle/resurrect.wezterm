@@ -239,6 +239,27 @@ This can improve performance when saving and loading state.
 `resurrect.save_state(state, opt_name?)` takes an optional string argument,
 which will rename the file to the name of the string.
 
+### restore_opts
+
+Options for restoring state:
+
+```lua
+{spawn_in_workspace: boolean?, -- Restores in the workspace
+relative: boolean?, -- Use relative size when restoring panes
+absolute: boolean?, -- Use absolute size when restoring panes
+pane: Pane?, -- Restore in this window
+tab: MuxTab?, -- Restore in this window
+window: MuxWindow, -- Restore in this window
+resize_window: boolean?, -- Resizes the window, default: true
+on_pane_restore: fun(pane_tree: pane_tree)} -- Function to restore panes, use resurrect.tab_state.default_on_pane_restore
+```
+
+#### Windows not resizing correctly
+
+Some users has had problems with `window_decorations` and `window_padding` configuration options,
+which caused issues when resizing, see [comment](https://github.com/MLFlexer/resurrect.wezterm/issues/72#issuecomment-2582912347).
+To avoid this, set the `resize_window` to false.
+
 ### fuzzy_load opts
 
 the `resurrect.fuzzy_load(window, pane, callback, opts?)` function takes an optional `opts` argument,
