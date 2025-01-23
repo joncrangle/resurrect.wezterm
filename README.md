@@ -249,7 +249,7 @@ relative: boolean?, -- Use relative size when restoring panes
 absolute: boolean?, -- Use absolute size when restoring panes
 pane: Pane?, -- Restore in this window
 tab: MuxTab?, -- Restore in this window
-window: MuxWindow?, -- Restore in this window
+window: MuxWindow, -- Restore in this window
 resize_window: boolean?, -- Resizes the window, default: true
 on_pane_restore: fun(pane_tree: pane_tree)} -- Function to restore panes, use resurrect.tab_state.default_on_pane_restore
 ```
