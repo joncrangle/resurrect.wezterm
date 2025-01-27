@@ -30,10 +30,11 @@ end
 ---@param opts? restore_opts
 function pub.restore_window(window, window_state, opts)
 	wezterm.emit("resurrect.window_state.restore_window.start")
-	if opts then
-	else
+	if opts == nil then
 		opts = {}
 	end
+
+	local prev_tabs = window:tabs()
 
 	if window_state.title then
 		window:set_title(window_state.title)
@@ -63,6 +64,13 @@ function pub.restore_window(window, window_state, opts)
 	end
 
 	active_tab:activate()
+
+	if opts.close_open_tabs then
+		for _, tab in pairs(prev_tabs) do
+			local tab_pane = tab:active_pane()
+			window:gui_window():perform_action(wezterm.action.CloseCurrentTab({ confirm = false }), tab_pane)
+		end
+	end
 	wezterm.emit("resurrect.window_state.restore_window.finished")
 end
 
