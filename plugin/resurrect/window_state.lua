@@ -24,14 +24,27 @@ function pub.get_window_state(window)
 	return window_state
 end
 
+---Force closes all other tabs in the window but one
+---@param window MuxWindow
+---@param tab_to_keep MuxTab
+local function close_all_other_tabs(window, tab_to_keep)
+	for _, tab in ipairs(window:tabs()) do
+		if tab:tab_id() ~= tab_to_keep:tab_id() then
+			tab:activate()
+			window
+				:gui_window()
+				:perform_action(wezterm.action.CloseCurrentTab({ confirm = false }), window:active_pane())
+		end
+	end
+end
+
 ---restore window state
 ---@param window MuxWindow
 ---@param window_state window_state
 ---@param opts? restore_opts
 function pub.restore_window(window, window_state, opts)
 	wezterm.emit("resurrect.window_state.restore_window.start")
-	if opts then
-	else
+	if opts == nil then
 		opts = {}
 	end
 
@@ -50,6 +63,10 @@ function pub.restore_window(window, window_state, opts)
 				spawn_tab_args.domain = { DomainName = tab_state.pane_tree.domain }
 			end
 			tab, opts.pane, _ = window:spawn_tab(spawn_tab_args)
+		end
+
+		if i == 1 and opts.close_open_tabs then
+			close_all_other_tabs(window, tab)
 		end
 
 		tab_state_mod.restore_tab(tab, tab_state, opts)

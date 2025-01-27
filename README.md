@@ -247,6 +247,7 @@ Options for restoring state:
 {spawn_in_workspace: boolean?, -- Restores in the workspace
 relative: boolean?, -- Use relative size when restoring panes
 absolute: boolean?, -- Use absolute size when restoring panes
+close_open_tabs: boolean?, -- Closes all tabs which are open in the window, only restored tabs are left
 pane: Pane?, -- Restore in this window
 tab: MuxTab?, -- Restore in this window
 window: MuxWindow, -- Restore in this window
@@ -256,14 +257,33 @@ on_pane_restore: fun(pane_tree: pane_tree)} -- Function to restore panes, use re
 
 #### Windows not resizing correctly
 
-Some users has had problems with `window_decorations` and `window_padding` configuration options,
-which caused issues when resizing, see [comment](https://github.com/MLFlexer/resurrect.wezterm/issues/72#issuecomment-2582912347).
+Some users has had problems with `window_decorations` and `window_padding`
+configuration options, which caused issues when resizing, see [comment](https://github.com/MLFlexer/resurrect.wezterm/issues/72#issuecomment-2582912347).
 To avoid this, set the `resize_window` to false.
+
+### Restoring into the current window
+
+To restore a window state into the current window use the `restore_window`
+function with `restore_opts` containing the window and `close_open_tabs` like so:
+
+```lua
+local opts = {
+  close_open_tabs = true,
+  window = pane:window(),
+  on_pane_restore = resurrect.tab_state.default_on_pane_restore,
+  relative = true,
+  restore_text = true,
+}
+resurrect.window_state.restore_window(pane:window(), state, opts)
+```
+
+This will restore the state into the passed window and additionally close all
+the tabs in the window, such that only the restored tabs are visible after restoring.
 
 ### fuzzy_load opts
 
-the `resurrect.fuzzy_load(window, pane, callback, opts?)` function takes an optional `opts` argument,
-which has the following types:
+the `resurrect.fuzzy_load(window, pane, callback, opts?)` function takes an
+optional `opts` argument, which has the following types:
 
 ```lua
 ---@alias fmt_fun fun(label: string): string
