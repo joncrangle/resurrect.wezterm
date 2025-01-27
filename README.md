@@ -269,7 +269,7 @@ function with `restore_opts` containing the window and `close_open_tabs` like so
 ```lua
 local opts = {
   close_open_tabs = true,
-  window = win,
+  window = pane:window(),
   on_pane_restore = resurrect.tab_state.default_on_pane_restore,
   relative = true,
   restore_text = true,
