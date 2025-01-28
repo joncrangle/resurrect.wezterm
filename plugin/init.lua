@@ -41,14 +41,14 @@ end
 
 enable_sub_modules()
 
-pub.save_state_dir = plugin_dir .. separator .. pub.get_require_path() .. separator .. "state" .. separator
-
 ---Changes the directory to save the state to
 ---@param directory string
 function pub.change_state_save_dir(directory)
 	pub.save_state_dir = directory
 	pub.fuzzy_loader.save_state_dir = directory
 end
+
+pub.change_state_save_dir(plugin_dir .. separator .. pub.get_require_path() .. separator .. "state" .. separator)
 
 ---@param file_name string
 ---@param type string
