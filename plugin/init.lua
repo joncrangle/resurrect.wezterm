@@ -269,7 +269,7 @@ pub.workspace_state = require("resurrect.workspace_state")
 pub.window_state = require("resurrect.window_state")
 pub.tab_state = require("resurrect.tab_state")
 pub.fuzzy_loader = require("resurrect.fuzzy_loader")
-pub.encryption = require("resurrect.encryption").encryption
+pub.encryption = require("resurrect.encryption")
 
 ---Changes the directory to save the state to
 ---@param directory string

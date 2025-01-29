@@ -1,8 +1,13 @@
 local wezterm = require("wezterm")
+---@alias encryption_opts {enable: boolean, method: string, private_key: string?, public_key: string?, encrypt: fun(file_path: string, lines: string), decrypt: fun(file_path: string): string}
 
----@class encrypt_module
----@field encryption encryption_opts
-local pub = {}
+---@type encryption_opts
+local pub = {
+	enable = false,
+	method = "age",
+	private_key = nil,
+	public_key = nil,
+}
 
 --- checks if the user is on windows
 local is_windows = wezterm.target_triple == "x86_64-pc-windows-msvc"
@@ -62,15 +67,14 @@ end
 
 ---@param file_path string
 ---@param lines string
-local function encrypt(file_path, lines)
-	local cmd =
-		string.format("%s -r %s -o %s", pub.encryption.method, pub.encryption.public_key, file_path:gsub(" ", "\\ "))
+function pub.encrypt(file_path, lines)
+	local cmd = string.format("%s -r %s -o %s", pub.method, pub.public_key, file_path:gsub(" ", "\\ "))
 
-	if pub.encryption.method:find("gpg") then
+	if pub.method:find("gpg") then
 		cmd = string.format(
 			"%s --batch --yes --encrypt --recipient %s --output %s",
-			pub.encryption.method,
-			pub.encryption.public_key,
+			pub.method,
+			pub.public_key,
 			file_path:gsub(" ", "\\ ")
 		)
 	end
@@ -83,11 +87,11 @@ end
 
 ---@param file_path string
 ---@return string
-local function decrypt(file_path)
-	local cmd = { pub.encryption.method, "-d", "-i", pub.encryption.private_key, file_path }
+function pub.decrypt(file_path)
+	local cmd = { pub.method, "-d", "-i", pub.private_key, file_path }
 
-	if pub.encryption.method:find("gpg") then
-		cmd = { pub.encryption.method, "--batch", "--yes", "--decrypt", file_path }
+	if pub.method:find("gpg") then
+		cmd = { pub.method, "--batch", "--yes", "--decrypt", file_path }
 	end
 
 	local success, stdout, stderr = wezterm.run_child_process(cmd)
@@ -97,15 +101,5 @@ local function decrypt(file_path)
 
 	return stdout
 end
-
----@alias encryption_opts {enable: boolean, method: string, private_key: string?, public_key: string?, encrypt: fun(file_path: string, lines: string), decrypt: fun(file_path: string): string}
-pub.encryption = {
-	enable = false,
-	method = "age",
-	private_key = nil,
-	public_key = nil,
-	encrypt = encrypt,
-	decrypt = decrypt,
-}
 
 return pub
