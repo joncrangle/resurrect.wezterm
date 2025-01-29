@@ -58,7 +58,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 	end
 
 	local function insert_choices(type, fmt)
-		for _, file in ipairs(wezterm.glob("*", pub.save_state_dir .. "/" .. type)) do
+		for _, file in ipairs(wezterm.glob("*", require("resurrect.state_manager").save_state_dir .. "/" .. type)) do
 			local label
 			local id = type .. "/" .. file
 
@@ -87,7 +87,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 		wezterm.action.InputSelector({
 			action = wezterm.action_callback(function(_, _, id, label)
 				if id and label then
-					callback(id, label, pub.save_state_dir)
+					callback(id, label, require("resurrect.state_manager").save_state_dir)
 				end
 				wezterm.emit("resurrect.fuzzy_loader.fuzzy_load.finished", window, pane)
 			end),
