@@ -33,7 +33,7 @@ config.keys = {
     key = "w",
     mods = "ALT",
     action = wezterm.action_callback(function(win, pane)
-        resurrect.save_state(resurrect.workspace_state.get_workspace_state())
+        resurrect.state_manager.save_state(resurrect.workspace_state.get_workspace_state())
       end),
   },
   {
@@ -50,7 +50,7 @@ config.keys = {
     key = "s",
     mods = "ALT",
     action = wezterm.action_callback(function(win, pane)
-        resurrect.save_state(resurrect.workspace_state.get_workspace_state())
+        resurrect.state_manager.save_state(resurrect.workspace_state.get_workspace_state())
         resurrect.window_state.save_window_action()
       end),
   },
@@ -78,13 +78,13 @@ config.keys = {
           on_pane_restore = resurrect.tab_state.default_on_pane_restore,
         }
         if type == "workspace" then
-          local state = resurrect.load_state(id, "workspace")
+          local state = resurrect.state_manager.load_state(id, "workspace")
           resurrect.workspace_state.restore_workspace(state, opts)
         elseif type == "window" then
-          local state = resurrect.load_state(id, "window")
+          local state = resurrect.state_manager.load_state(id, "window")
           resurrect.window_state.restore_window(pane:window(), state, opts)
         elseif type == "tab" then
-          local state = resurrect.load_state(id, "tab")
+          local state = resurrect.state_manager.load_state(id, "tab")
           resurrect.tab_state.restore_tab(pane:tab(), state, opts)
         end
       end)
@@ -111,7 +111,7 @@ Public key: age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac8p
 
 ```lua
 local resurrect = wezterm.plugin.require("https://github.com/MLFlexer/resurrect.wezterm")
-resurrect.set_encryption({
+resurrect.state_manager.set_encryption({
   enable = true,
   method = "age" -- "age" is the default encryption method, but you can also specify "rage" or "gpg"
   private_key = "/path/to/private/key.txt", -- if using "gpg", you can omit this
@@ -131,7 +131,7 @@ resurrect.set_encryption({
 Alternate implementations are possible by providing your own `encrypt` and `decrypt` functions:
 
 ```lua
-resurrect.set_encryption({
+resurrect.state_manager.set_encryption({
   enable = true,
   private_key = "/path/to/private/key.txt",
   public_key = "public_key",
@@ -167,7 +167,7 @@ If you wish to share a non-documented way of encrypting your files or think some
 
 ## How do I use it?
 
-I use the builtin `resurrect.periodic_save()` to save my workspaces every 15 minutes.
+I use the builtin `resurrect.state_manager.periodic_save()` to save my workspaces every 15 minutes.
 This ensures that if I close Wezterm, then I can restore my session state to a state which is at most 15 minutes old.
 
 I also use it to restore the state of my workspaces. As I use the plugin [smart_workspace_switcher.wezterm](https://github.com/MLFlexer/smart_workspace_switcher.wezterm),
@@ -179,7 +179,7 @@ I have added the following to my configuration to be able to do this whenever I 
 wezterm.on("smart_workspace_switcher.workspace_switcher.created", function(window, path, label)
   local workspace_state = resurrect.workspace_state
   
-  workspace_state.restore_workspace(resurrect.load_state(label, "workspace"), {
+  workspace_state.restore_workspace(resurrect.state_manager.load_state(label, "workspace"), {
     window = window,
     relative = true,
     restore_text = true,
@@ -190,7 +190,7 @@ end)
 -- Saves the state whenever I select a workspace
 wezterm.on("smart_workspace_switcher.workspace_switcher.selected", function(window, path, label)
   local workspace_state = resurrect.workspace_state
-  resurrect.save_state(workspace_state.get_workspace_state())
+  resurrect.state_manager.save_state(workspace_state.get_workspace_state())
 end)
 ```
 
@@ -200,7 +200,7 @@ You can checkout my configuration [here](https://github.com/MLFlexer/.dotfiles/t
 
 ### Periodic saving of state
 
-`resurrect.periodic_save(opts?)` will save the workspace state every 15 minutes by default.
+`resurrect.state_manager.periodic_save(opts?)` will save the workspace state every 15 minutes by default.
 You can add the `opts` table to change the behaviour. It exposes the following options:
 
 ```lua
@@ -218,25 +218,25 @@ You can resume from where you left off by resurrecting on startup with
 the following addition to your config:
 
 ```lua
-wezterm.on("gui-startup", resurrect.resurrect_on_gui_startup)
+wezterm.on("gui-startup", resurrect.state_manager.resurrect_on_gui_startup)
 ```
 
 This will read a file which has been written by the
-`resurrect.write_current_state("workspace name", "workspace")` function.
+`resurrect.state_manager.write_current_state("workspace name", "workspace")` function.
 
 > [!NOTE]
 > For this to work, you must include a way to write the current workspace,
-> be it via. the `resurrect.periodic_save` event or when changing workspaces.
+> be it via. the `resurrect.state_manager.periodic_save` event or when changing workspaces.
 
 ### Limiting the amount of output lines saved for a pane
 
-`resurrect.set_max_nlines(number)` will limit each pane to save at most
-`number` lines to the state.
+`resurrect.state_manager.set_max_nlines(number)` will limit each pane to save
+at most `number` lines to the state.
 This can improve performance when saving and loading state.
 
 ### save_state options
 
-`resurrect.save_state(state, opt_name?)` takes an optional string argument,
+`resurrect.state_manager.save_state(state, opt_name?)` takes an optional string argument,
 which will rename the file to the name of the string.
 
 ### restore_opts
@@ -295,7 +295,7 @@ This is used to format labels, ignore saved state, change the title and change t
 ### Change the directory to store the saved state
 
 ```lua
-resurrect.change_state_save_dir("/some/other/directory")
+resurrect.state_manager.change_state_save_dir("/some/other/directory")
 ```
 
 > [!WARNING]
@@ -306,42 +306,42 @@ resurrect.change_state_save_dir("/some/other/directory")
 >
 > ```lua
 > -- Set some directory where Wezterm has write access
-> resurrect.save_state_dir = "C:\\Users\\Admin\\Desktop\\state\\"
+> resurrect.state_manager.change_state_save_dir("C:\\Users\\<user>\\Desktop\\state\\")
 > ```
 
 ### Events
 
 This plugin emits the following events that you can use for your own callback functions:
 
-- `resurrect.decrypt.start(file_path)`
-- `resurrect.decrypt.finished(file_path)`
-- `resurrect.delete_state.start(file_path)`
-- `resurrect.delete_state.finished(file_path)`
-- `resurrect.encrypt.start(file_path)`
-- `resurrect.encrypt.finished(file_path)`
-- `resurrect.fuzzy_loader.fuzzy_load.start(window, pane)`
-- `resurrect.fuzzy_loader.fuzzy_load.finished(window, pane)`
 - `resurrect.error(err)`
-- `resurrect.load_state.start(name, type)`
-- `resurrect.load_state.finished(name, type)`
-- `resurrect.periodic_save(opts)`
-- `resurrect.sanitize_json.start(data)`
-- `resurrect.sanitize_json.finished(data)`
-- `resurrect.save_state.start(file_path, event_type)`
-- `resurrect.save_state.finished(file_path, event_type)`
-- `resurrect.tab_state.restore_tab.start`
+- `resurrect.file_io.decrypt.finished(file_path)`
+- `resurrect.file_io.decrypt.start(file_path)`
+- `resurrect.file_io.encrypt.finished(file_path)`
+- `resurrect.file_io.encrypt.start(file_path)`
+- `resurrect.file_io.sanitize_json.finished(data)`
+- `resurrect.file_io.sanitize_json.start(data)`
+- `resurrect.fuzzy_loader.fuzzy_load.finished(window, pane)`
+- `resurrect.fuzzy_loader.fuzzy_load.start(window, pane)`
+- `resurrect.state_manager.delete_state.finished(file_path)`
+- `resurrect.state_manager.delete_state.start(file_path)`
+- `resurrect.state_manager.load_state.finished(name, type)`
+- `resurrect.state_manager.load_state.start(name, type)`
+- `resurrect.state_manager.periodic_save(opts)`
+- `resurrect.state_manager.save_state.finished(file_path, event_type)`
+- `resurrect.state_manager.save_state.start(file_path, event_type)`
 - `resurrect.tab_state.restore_tab.finished`
-- `resurrect.window_state.restore_window.start`
+- `resurrect.tab_state.restore_tab.start`
 - `resurrect.window_state.restore_window.finished`
-- `resurrect.workspace_state.restore_workspace.start`
+- `resurrect.window_state.restore_window.start`
 - `resurrect.workspace_state.restore_workspace.finished`
+- `resurrect.workspace_state.restore_workspace.start`
 
 Example: sending a toast notification when specified events occur, but suppress on `periodic_save()`:
 
 ```lua
 local resurrect_event_listeners = {
   "resurrect.error",
-  "resurrect.save_state.finished",
+  "resurrect.state_manager.save_state.finished",
 }
 local is_periodic_save = false
 wezterm.on("resurrect.periodic_save", function()
@@ -349,7 +349,7 @@ wezterm.on("resurrect.periodic_save", function()
 end)
 for _, event in ipairs(resurrect_event_listeners) do
   wezterm.on(event, function(...)
-    if event == "resurrect.save_state.finished" and is_periodic_save then
+    if event == "resurrect.state_manager.save_state.finished" and is_periodic_save then
       is_periodic_save = false
       return
     end
@@ -422,7 +422,7 @@ config.keys = {
     mods = "ALT",
     action = wezterm.action_callback(function(win, pane)
       resurrect.fuzzy_loader.fuzzy_load(win, pane, function(id)
-          resurrect.delete_state(id)
+          resurrect.state_manager.delete_state(id)
         end,
         {
           title = "Delete State",
@@ -458,7 +458,7 @@ wezterm.on("augment-command-palette", function(window, pane)
         action = wezterm.action_callback(function(window, pane, line)
           if line then
             wezterm.mux.rename_workspace(wezterm.mux.get_active_workspace(), line)
-            resurrect.save_state(workspace_state.get_workspace_state())
+            resurrect.state_manager.save_state(workspace_state.get_workspace_state())
           end
         end),
       }),
@@ -471,15 +471,16 @@ end)
 
 ### Pane CWD is not correct on Windows
 
-If your pane CWD is incorrect then it might be a problem with the shell integration and OSC 7. See [Wezterm documentation](https://wezfurlong.org/wezterm/shell-integration.html).
+If your pane CWD is incorrect then it might be a problem with the shell
+integration and OSC 7. See [Wezterm documentation](https://wezfurlong.org/wezterm/shell-integration.html).
 
 ### How do I keep my plugins up to date?
 
 #### Manually
 
 Wezterm git clones your plugins into a plugin directory.
-Enter `wezterm.plugin.list()` in the Wezterm Debug Overlay (`Ctrl + Shift + L`) to see where they are stored.
-You can then update them individually using git pull.
+Enter `wezterm.plugin.list()` in the Wezterm Debug Overlay (`Ctrl + Shift + L`)
+to see where they are stored. You can then update them individually using git pull.
 
 #### Automatically
 
@@ -488,9 +489,9 @@ Add `wezterm.plugin.update_all()` to your Wezterm config.
 ## Contributions
 
 Suggestions, Issues and PRs are welcome!
-The features currently implemented are the ones I use the most, but your workflow might differ.
-As such, if you have any proposals on how to improve the plugin,
-then please feel free to make an issue or even better a PR!
+The features currently implemented are the ones I use the most, but your
+workflow might differ. As such, if you have any proposals on how to improve
+the plugin, then please feel free to make an issue or even better a PR!
 
 ### Technical details
 
@@ -504,8 +505,8 @@ Improvements to this section is also very much welcome.
 
 ## Disclaimer
 
-If you don't setup encryption then the state of your terminal is saved as plaintext json files.
-Please be aware that the plugin will by default write the output of the shell among other things,
-which could contain secrets or other vulnerable data.
-If you do not want to store this as plaintext,
-then please use the provided documentation for encrypting state.
+If you don't setup encryption then the state of your terminal is saved as
+plaintext json files. Please be aware that the plugin will by default write the
+output of the shell among other things, which could contain secrets or other
+vulnerable data. If you do not want to store this as plaintext, then please use
+the provided documentation for encrypting state.
