@@ -36,13 +36,13 @@ end
 ---@param type string
 ---@return table
 function pub.load_state(name, type)
-	wezterm.emit("resurrect.load_state.start", name, type)
+	wezterm.emit("resurrect.state_manager.load_state.start", name, type)
 	local json = file_io.load_json(get_file_path(name, type))
 	if not json then
 		wezterm.emit("resurrect.error", "Invalid json: " .. get_file_path(name, type))
 		return {}
 	end
-	wezterm.emit("resurrect.load_state.finished", name, type)
+	wezterm.emit("resurrect.state_manager.load_state.finished", name, type)
 	return json
 end
 
@@ -56,7 +56,7 @@ function pub.periodic_save(opts)
 		opts.interval_seconds = 60 * 15
 	end
 	wezterm.time.call_after(opts.interval_seconds, function()
-		wezterm.emit("resurrect.periodic_save", opts)
+		wezterm.emit("resurrect.state_manager.periodic_save", opts)
 		if opts.save_workspaces then
 			pub.save_state(require("resurrect.workspace_state").get_workspace_state())
 		end
@@ -134,14 +134,14 @@ end
 
 ---@param file_path string
 function pub.delete_state(file_path)
-	wezterm.emit("resurrect.delete_state.start", file_path)
+	wezterm.emit("resurrect.state_manager.delete_state.start", file_path)
 	local path = pub.save_state_dir .. file_path
 	local success = os.remove(path)
 	if not success then
 		wezterm.emit("resurrect.error", "Failed to delete state: " .. path)
 		wezterm.log_error("Failed to delete state: " .. path)
 	end
-	wezterm.emit("resurrect.delete_state.finished", file_path)
+	wezterm.emit("resurrect.state_manager.delete_state.finished", file_path)
 end
 
 --- Merges user-supplied options with default options

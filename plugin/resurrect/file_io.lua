@@ -19,12 +19,12 @@ end
 --- @param data string
 --- @return string
 local function sanitize_json(data)
-	wezterm.emit("resurrect.sanitize_json.start", data)
+	wezterm.emit("resurrect.file_io.sanitize_json.start", data)
 	-- escapes control characters to ensure valid json
 	data = data:gsub("[\x00-\x1F]", function(c)
 		return string.format("\\u00%02X", string.byte(c))
 	end)
-	wezterm.emit("resurrect.sanitize_json.finished")
+	wezterm.emit("resurrect.file_io.sanitize_json.finished")
 	return data
 end
 
@@ -32,11 +32,11 @@ end
 ---@param state table
 ---@param event_type "workspace" | "window" | "tab"
 function pub.write_state(file_path, state, event_type)
-	wezterm.emit("resurrect.save_state.start", file_path, event_type)
+	wezterm.emit("resurrect.file_io.save_state.start", file_path, event_type)
 	local json_state = wezterm.json_encode(state)
 	json_state = sanitize_json(json_state)
 	if pub.encryption.enable then
-		wezterm.emit("resurrect.encrypt.start", file_path)
+		wezterm.emit("resurrect.file_io.encrypt.start", file_path)
 		local ok, err = pcall(function()
 			return pub.encryption.encrypt(file_path, json_state)
 		end)
@@ -44,7 +44,7 @@ function pub.write_state(file_path, state, event_type)
 			wezterm.emit("resurrect.error", "Encryption failed: " .. tostring(err))
 			wezterm.log_error("Decryption failed: " .. tostring(err))
 		else
-			wezterm.emit("resurrect.encrypt.finished", file_path)
+			wezterm.emit("resurrect.file_io.encrypt.finished", file_path)
 		end
 	else
 		local ok, err = pcall(function()
@@ -57,7 +57,7 @@ function pub.write_state(file_path, state, event_type)
 			wezterm.log_error("Failed to write state: " .. err)
 		end
 	end
-	wezterm.emit("resurrect.save_state.finished", file_path, event_type)
+	wezterm.emit("resurrect.file_io.save_state.finished", file_path, event_type)
 end
 
 ---@param file_path string
@@ -65,7 +65,7 @@ end
 function pub.load_json(file_path)
 	local json
 	if pub.encryption.enable then
-		wezterm.emit("resurrect.decrypt.start", file_path)
+		wezterm.emit("resurrect.file_io.decrypt.start", file_path)
 		local ok, output = pcall(function()
 			return pub.encryption.decrypt(file_path)
 		end)
@@ -74,7 +74,7 @@ function pub.load_json(file_path)
 			wezterm.log_error("Decryption failed: " .. tostring(output))
 		else
 			json = output
-			wezterm.emit("resurrect.decrypt.finished", file_path)
+			wezterm.emit("resurrect.file_io.decrypt.finished", file_path)
 		end
 	else
 		local lines = {}
