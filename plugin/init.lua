@@ -41,15 +41,6 @@ end
 
 enable_sub_modules()
 
----Changes the directory to save the state to
----@param directory string
-function pub.change_state_save_dir(directory)
-	pub.save_state_dir = directory
-	pub.fuzzy_loader.save_state_dir = directory
-end
-
-pub.change_state_save_dir(plugin_dir .. separator .. pub.get_require_path() .. separator .. "state" .. separator)
-
 ---@param file_name string
 ---@param type string
 ---@param opt_name string?
@@ -376,7 +367,15 @@ pub.workspace_state = require("resurrect.workspace_state")
 pub.window_state = require("resurrect.window_state")
 pub.tab_state = require("resurrect.tab_state")
 pub.fuzzy_loader = require("resurrect.fuzzy_loader")
-pub.fuzzy_loader.save_state_dir = pub.save_state_dir
+
+---Changes the directory to save the state to
+---@param directory string
+function pub.change_state_save_dir(directory)
+	pub.save_state_dir = directory
+	pub.fuzzy_loader.save_state_dir = directory
+end
+
+pub.change_state_save_dir(plugin_dir .. separator .. pub.get_require_path() .. separator .. "state" .. separator)
 
 function pub.set_max_nlines(max_nlines)
 	require("resurrect.pane_tree").max_nlines = max_nlines
