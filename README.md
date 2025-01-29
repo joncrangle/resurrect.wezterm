@@ -68,7 +68,7 @@ config.keys = {
     key = "r",
     mods = "ALT",
     action = wezterm.action_callback(function(win, pane)
-      resurrect.fuzzy_load(win, pane, function(id, label)
+      resurrect.fuzzy_loader.fuzzy_load(win, pane, function(id, label)
         local type = string.match(id, "^([^/]+)") -- match before '/'
         id = string.match(id, "([^/]+)$") -- match after '/'
         id = string.match(id, "(.+)%..+$") -- remove file extention
@@ -282,7 +282,7 @@ the tabs in the window, such that only the restored tabs are visible after resto
 
 ### fuzzy_load opts
 
-the `resurrect.fuzzy_load(window, pane, callback, opts?)` function takes an
+the `resurrect.fuzzy_loader.fuzzy_load(window, pane, callback, opts?)` function takes an
 optional `opts` argument, which has the following types:
 
 ```lua
@@ -319,8 +319,8 @@ This plugin emits the following events that you can use for your own callback fu
 - `resurrect.delete_state.finished(file_path)`
 - `resurrect.encrypt.start(file_path)`
 - `resurrect.encrypt.finished(file_path)`
-- `resurrect.fuzzy_load.start(window, pane)`
-- `resurrect.fuzzy_load.finished(window, pane)`
+- `resurrect.fuzzy_loader.fuzzy_load.start(window, pane)`
+- `resurrect.fuzzy_loader.fuzzy_load.finished(window, pane)`
 - `resurrect.error(err)`
 - `resurrect.load_state.start(name, type)`
 - `resurrect.load_state.finished(name, type)`
@@ -421,7 +421,7 @@ config.keys = {
     key = "d",
     mods = "ALT",
     action = wezterm.action_callback(function(win, pane)
-      resurrect.fuzzy_load(win, pane, function(id)
+      resurrect.fuzzy_loader.fuzzy_load(win, pane, function(id)
           resurrect.delete_state(id)
         end,
         {
