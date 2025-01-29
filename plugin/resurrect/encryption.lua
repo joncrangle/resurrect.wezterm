@@ -108,14 +108,4 @@ pub.encryption = {
 	decrypt = decrypt,
 }
 
---- Merges user-supplied options with default options
---- @param user_opts encryption_opts
-function pub.set_encryption(user_opts)
-	for k, v in pairs(user_opts) do
-		if v ~= nil then
-			pub.encryption[k] = v
-		end
-	end
-end
-
 return pub
