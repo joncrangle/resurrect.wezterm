@@ -43,15 +43,15 @@ local function init()
 	require("resurrect.state_manager").change_state_save_dir(
 		plugin_dir .. separator .. get_require_path() .. separator .. "state" .. separator
 	)
+
+	-- Export submodules
+	pub.workspace_state = require("resurrect.workspace_state")
+	pub.window_state = require("resurrect.window_state")
+	pub.tab_state = require("resurrect.tab_state")
+	pub.fuzzy_loader = require("resurrect.fuzzy_loader")
+	pub.state_manager = require("resurrect.state_manager")
 end
 
 init()
-
--- Export submodules
-pub.workspace_state = require("resurrect.workspace_state")
-pub.window_state = require("resurrect.window_state")
-pub.tab_state = require("resurrect.tab_state")
-pub.fuzzy_loader = require("resurrect.fuzzy_loader")
-pub.state_manager = require("resurrect.state_manager")
 
 return pub
