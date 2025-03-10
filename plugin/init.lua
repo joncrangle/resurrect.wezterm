@@ -6,16 +6,10 @@ local plugin_dir
 
 local plugin_name = "resurrect"
 
---- checks if the user is on windows
-local is_windows = wezterm.target_triple == "x86_64-pc-windows-msvc"
-local separator = is_windows and "\\" or "/"
-
---- Checks if the plugin directory exists
---- @return boolean
-local function directory_exists(path)
-	local success, result = pcall(wezterm.read_dir, plugin_dir .. path)
-	return success and result
-end
+--- checks if the user is on Windows or MacOS
+Is_windows = wezterm.target_triple == "x86_64-pc-windows-msvc"
+Is_mac = (wezterm.target_triple == "x86_64-apple-darwin" or wezterm.target_triple == "aarch64-apple-darwin")
+Separator = Is_windows and "\\" or "/"
 
 --- Returns the name of the package, used when requiring modules
 --- @return string
@@ -26,21 +20,20 @@ local function get_require_path()
 			result = plugin.plugin_dir
 		end
 	end
-	print("Require path: ", result)
 	return result
 end
 
 --- adds the wezterm plugin directory to the lua path
 local function enable_sub_modules()
 	plugin_dir = get_require_path()
-	package.path = package.path .. ";" .. plugin_dir .. separator .. "plugin" .. separator .. "?.lua"
+	package.path = package.path .. ";" .. plugin_dir .. Separator .. "plugin" .. Separator .. "?.lua"
 end
 
 local function init()
 	enable_sub_modules()
 
 	require("resurrect.state_manager").change_state_save_dir(
-		plugin_dir .. separator .. get_require_path() .. separator .. "state" .. separator
+		plugin_dir .. Separator .. get_require_path() .. Separator .. "state" .. Separator
 	)
 
 	-- Export submodules
