@@ -139,22 +139,20 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			end
 
 			for _, file in ipairs(files) do
-				local prefixed_date = " "
+				local padding = " "
 				if #file.filename < max_length then
-					prefixed_date = " " .. string.rep(".", max_length - #file.filename - 1) .. file.date
-				else
-					prefixed_date = " " .. file.date
+					padding = padding .. string.rep(".", max_length - #file.filename - 1)
 				end
 				local label = ""
 				if fmt then
-					label = fmt(file.filename)
+					label = fmt(file.filename .. padding)
 				else
-					label = file.filename
+					label = file.filename .. padding
 				end
 				if opts.fmt_date then
-					label = label .. opts.fmt_date(prefixed_date)
+					label = label .. " " .. opts.fmt_date(file.date)
 				else
-					label = label .. prefixed_date
+					label = label .. " " .. file.date
 				end
 				table.insert(state_files, { id = file.id, label = label })
 			end
