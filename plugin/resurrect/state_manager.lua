@@ -3,10 +3,6 @@ local file_io = require("resurrect.file_io")
 
 local pub = {}
 
---- checks if the user is on windows
-local is_windows = wezterm.target_triple == "x86_64-pc-windows-msvc"
-local separator = is_windows and "\\" or "/"
-
 ---@param file_name string
 ---@param type string
 ---@param opt_name string?
@@ -15,7 +11,7 @@ local function get_file_path(file_name, type, opt_name)
 	if opt_name then
 		file_name = opt_name
 	end
-	return string.format("%s%s" .. separator .. "%s.json", pub.save_state_dir, type, file_name:gsub(separator, "+"))
+	return string.format("%s%s" .. Separator .. "%s.json", pub.save_state_dir, type, file_name:gsub(Separator, "+"))
 end
 
 ---save state to a file
@@ -93,7 +89,7 @@ end
 ---@return boolean
 ---@return string|nil
 function pub.write_current_state(name, type)
-	local file_path = pub.save_state_dir .. separator .. "current_state"
+	local file_path = pub.save_state_dir .. Separator .. "current_state"
 	local suc, err = pcall(function()
 		local file = io.open(file_path, "w+")
 		if not file then
@@ -110,7 +106,7 @@ end
 ---@return boolean
 ---@return string|nil
 function pub.resurrect_on_gui_startup()
-	local file_path = pub.save_state_dir .. separator .. "current_state"
+	local file_path = pub.save_state_dir .. Separator .. "current_state"
 	local suc, err = pcall(function()
 		local file = io.open(file_path, "r")
 		if not file then
@@ -157,10 +153,10 @@ function pub.change_state_save_dir(directory)
 		string.gsub(directory, "%s+", ""), -- trim any trailing space
 		"[\\/]$",
 		"" -- remove any trailing \ or /
-	) .. separator -- add a trailing separator
+	) .. Separator -- add a trailing separator
 	-- ensure that subfolders exist
 
-	if is_windows then
+	if Is_windows then
 		os.execute("mkdir " .. pub.save_state_dir .. "tab")
 		os.execute("mkdir " .. pub.save_state_dir .. "window")
 		os.execute("mkdir " .. pub.save_state_dir .. "workspace")

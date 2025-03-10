@@ -9,16 +9,13 @@ local pub = {
 	public_key = nil,
 }
 
---- checks if the user is on windows
-local is_windows = wezterm.target_triple == "x86_64-pc-windows-msvc"
-
 ---executes cmd and passes input to stdin
 ---@param cmd string command to be run
 ---@param input string input to stdin
 ---@return boolean
 ---@return string
 local function execute_cmd_with_stdin(cmd, input)
-	if is_windows and #input < 32000 then -- Check if input is larger than max cmd length on Windows
+	if Is_windows and #input < 32000 then -- Check if input is larger than max cmd length on Windows
 		cmd = string.format("%s | %s", wezterm.shell_join_args({ "Write-Output", "-NoEnumerate", input }), cmd)
 		local process_args = { "pwsh.exe", "-NoProfile", "-Command", cmd }
 
@@ -28,7 +25,7 @@ local function execute_cmd_with_stdin(cmd, input)
 		else
 			return success, stderr
 		end
-	elseif #input < 150000 and not is_windows then -- Check if input is larger than common max on MacOS and Linux
+	elseif #input < 150000 and not Is_windows then -- Check if input is larger than common max on MacOS and Linux
 		cmd = string.format("%s | %s", wezterm.shell_join_args({ "echo", "-E", "-n", input }), cmd)
 		local process_args = { os.getenv("SHELL"), "-c", cmd }
 
@@ -41,7 +38,7 @@ local function execute_cmd_with_stdin(cmd, input)
 	else
 		-- redirect stderr to stdout to test if cmd will execute
 		-- can't check on Windows because it doesn't support /dev/stdin
-		if not is_windows then
+		if not Is_windows then
 			local stdout = io.popen(cmd .. " 2>&1", "r")
 			if not stdout then
 				return false, "Failed to execute: " .. cmd
