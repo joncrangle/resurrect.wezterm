@@ -145,16 +145,16 @@ function pub.fuzzy_load(window, pane, callback, opts)
 				else
 					prefixed_date = " " .. file.date
 				end
-				local label = {}
+				local label = ""
 				if fmt then
-					table.insert(label, fmt(file.filename))
+					label = fmt(file.filename)
 				else
-					table.insert(label, { text = file.filename })
+					label = file.filename
 				end
 				if opts.fmt_date then
-					table.insert(label, opts.fmt_date(prefixed_date))
+					label = label .. opts.fmt_date(prefixed_date)
 				else
-					table.insert(label, { text = prefixed_date })
+					label = label .. prefixed_date
 				end
 				table.insert(state_files, { id = file.id, label = label })
 			end
@@ -174,8 +174,6 @@ function pub.fuzzy_load(window, pane, callback, opts)
 	if not opts.ignore_tabs then
 		insert_choices("tab", opts.fmt_tab)
 	end
-
-	print(state_files)
 
 	window:perform_action(
 		wezterm.action.InputSelector({
