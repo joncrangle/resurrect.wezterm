@@ -141,7 +141,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			for _, file in ipairs(files) do
 				local padding = " "
 				if #file.filename < max_length then
-					padding = padding .. string.rep(".", max_length - #file.filename - 1)
+					padding = padding .. string.rep(".", max_length - #file.filename - 1) .. padding
 				end
 				local label = ""
 				if fmt then
