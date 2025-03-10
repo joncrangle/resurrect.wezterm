@@ -32,7 +32,7 @@ end
 ---@param state table
 ---@param event_type "workspace" | "window" | "tab"
 function pub.write_state(file_path, state, event_type)
-	wezterm.emit("resurrect.file_io.save_state.start", file_path, event_type)
+	wezterm.emit("resurrect.file_io.write_state.start", file_path, event_type)
 	local json_state = wezterm.json_encode(state)
 	json_state = sanitize_json(json_state)
 	if pub.encryption.enable then
@@ -57,7 +57,7 @@ function pub.write_state(file_path, state, event_type)
 			wezterm.log_error("Failed to write state: " .. err)
 		end
 	end
-	wezterm.emit("resurrect.file_io.save_state.finished", file_path, event_type)
+	wezterm.emit("resurrect.file_io.write_state.finished", file_path, event_type)
 end
 
 ---@param file_path string
