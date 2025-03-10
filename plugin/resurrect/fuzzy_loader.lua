@@ -129,7 +129,6 @@ function pub.fuzzy_load(window, pane, callback, opts)
 				if epoch and file then
 					local filename, _ = file:match("^.*" .. Separator .. "(.+)%.(.*)$")
 					local formatted_date = os.date(opts.date_format, tonumber(epoch))
-					-- 		table.insert(state_files, { id = id, label = label })
 					max_length = math.max(max_length, #filename)
 					table.insert(files, {
 						id = type .. Separator .. file,
@@ -142,7 +141,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			for _, file in ipairs(files) do
 				local prefixed_date = " "
 				if #file.filename < max_length then
-					prefixed_date = " " .. string.rep(".", max_length - #file.finaname - 1) .. file.formatted_date
+					prefixed_date = " " .. string.rep(".", max_length - #file.filename - 1) .. file.formatted_date
 				else
 					prefixed_date = " " .. file.formatted_date
 				end
