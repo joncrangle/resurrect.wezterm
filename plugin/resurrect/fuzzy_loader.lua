@@ -141,7 +141,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 
 			for _, file in ipairs(files) do
 				local prefixed_date = " "
-				if #file.label < max_length then
+				if #file.filename < max_length then
 					prefixed_date = " " .. string.rep(".", max_length - #file.label - 1) .. file.formatted_date
 				else
 					prefixed_date = " " .. file.formatted_date
