@@ -77,7 +77,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 		local fallback = function(root_folder, state_type, state_fmt)
 			for _, file in ipairs(wezterm.glob("*", root_folder .. Separator .. state_type)) do
 				local label
-				local id = type .. "/" .. file
+				local id = type .. Separator .. file
 
 				if state_fmt then
 					label = state_fmt(file)
@@ -130,9 +130,9 @@ function pub.fuzzy_load(window, pane, callback, opts)
 					local filename, _ = file:match("^.*" .. Separator .. "(.+)%.(.*)$")
 					local formatted_date = os.date(opts.date_format, tonumber(epoch))
 					-- 		table.insert(state_files, { id = id, label = label })
-					max_length = math.max(max_length, #label)
+					max_length = math.max(max_length, #filename)
 					table.insert(files, {
-						id = type .. "/" .. file,
+						id = type .. Separator .. file,
 						filename = filename,
 						date = formatted_date,
 					})
