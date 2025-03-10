@@ -4,6 +4,8 @@ local pub = {}
 
 local plugin_dir
 
+local plugin_name = "resurrect"
+
 --- checks if the user is on windows
 local is_windows = wezterm.target_triple == "x86_64-pc-windows-msvc"
 local separator = is_windows and "\\" or "/"
@@ -18,23 +20,20 @@ end
 --- Returns the name of the package, used when requiring modules
 --- @return string
 local function get_require_path()
-	local path1 = "httpssCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDswezterm"
-	local path2 = "httpssCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDsweztermsZs"
-	return directory_exists(path2) and path2 or path1
+	local result = ""
+	for _, plugin in ipairs(wezterm.plugin.list()) do
+		if plugin.component:find(plugin_name) then
+			result = plugin.plugin_dir
+		end
+	end
+	print("Require path: ", result)
+	return result
 end
 
 --- adds the wezterm plugin directory to the lua path
 local function enable_sub_modules()
-	plugin_dir = wezterm.plugin.list()[1].plugin_dir:gsub(separator .. "[^" .. separator .. "]*$", "")
-	package.path = package.path
-		.. ";"
-		.. plugin_dir
-		.. separator
-		.. get_require_path()
-		.. separator
-		.. "plugin"
-		.. separator
-		.. "?.lua"
+	plugin_dir = get_require_path()
+	package.path = package.path .. ";" .. plugin_dir .. separator .. "plugin" .. separator .. "?.lua"
 end
 
 local function init()
