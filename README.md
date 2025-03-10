@@ -326,7 +326,8 @@ This plugin emits the following events that you can use for your own callback fu
 - `resurrect.state_manager.delete_state.start(file_path)`
 - `resurrect.state_manager.load_state.finished(name, type)`
 - `resurrect.state_manager.load_state.start(name, type)`
-- `resurrect.state_manager.periodic_save(opts)`
+- `resurrect.state_manager.periodic_save.start(opts)`
+- `resurrect.state_manager.periodic_save.finished(opts)`
 - `resurrect.state_manager.save_state.finished(file_path, event_type)`
 - `resurrect.state_manager.save_state.start(file_path, event_type)`
 - `resurrect.tab_state.restore_tab.finished`
