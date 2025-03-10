@@ -248,6 +248,7 @@ Options for restoring state:
 relative: boolean?, -- Use relative size when restoring panes
 absolute: boolean?, -- Use absolute size when restoring panes
 close_open_tabs: boolean?, -- Closes all tabs which are open in the window, only restored tabs are left
+close_open_panes: boolean?, -- Closes all panes which are open in the tab, only keeping the panes to be restored
 pane: Pane?, -- Restore in this window
 tab: MuxTab?, -- Restore in this window
 window: MuxWindow, -- Restore in this window
