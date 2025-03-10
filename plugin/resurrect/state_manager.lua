@@ -153,7 +153,22 @@ end
 ---Changes the directory to save the state to
 ---@param directory string
 function pub.change_state_save_dir(directory)
-	pub.save_state_dir = directory
+	pub.save_state_dir = string.gsub(
+		string.gsub(directory, "%s+", ""), -- trim any trailing space
+		"[\\/]$",
+		"" -- remove any trailing \ or /
+	) .. separator -- add a trailing separator
+	-- ensure that subfolders exist
+
+	if is_windows then
+		os.execute("mkdir " .. pub.save_state_dir .. "tab")
+		os.execute("mkdir " .. pub.save_state_dir .. "window")
+		os.execute("mkdir " .. pub.save_state_dir .. "workspace")
+	else
+		os.execute("mkdir -p " .. pub.save_state_dir .. "tab")
+		os.execute("mkdir -p " .. pub.save_state_dir .. "window")
+		os.execute("mkdir -p " .. pub.save_state_dir .. "workspace")
+	end
 end
 
 function pub.set_max_nlines(max_nlines)
