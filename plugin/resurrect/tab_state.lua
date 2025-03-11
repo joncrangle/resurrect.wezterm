@@ -141,7 +141,7 @@ function pub.save_tab_action()
 			)
 		elseif tab:get_title() then
 			local state = pub.get_tab_state(tab)
-			resurrect.save_state(state)
+			resurrect.state_manager.save_state(state)
 		end
 	end)
 end
