@@ -4,7 +4,7 @@ local pub = {}
 
 local plugin_dir
 
-local plugin_name = "resurrect"
+local plugin_name = "resurrectsDswezterm"
 
 --- checks if the user is on Windows or MacOS
 Is_windows = wezterm.target_triple == "x86_64-pc-windows-msvc"
