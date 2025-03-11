@@ -53,14 +53,18 @@ function pub.periodic_save(opts)
 	end
 	wezterm.time.call_after(opts.interval_seconds, function()
 		wezterm.emit("resurrect.state_manager.periodic_save", opts)
+		print("Periodic save")
 		if opts.save_workspaces then
+			print("- Save workspace state")
 			pub.save_state(require("resurrect.workspace_state").get_workspace_state())
 		end
 
 		if opts.save_windows then
+			print("- Save windows state")
 			for _, gui_win in ipairs(wezterm.gui.gui_windows()) do
 				local mux_win = gui_win:mux_window()
 				local title = mux_win:get_title()
+				print("  - Window: ", title)
 				if title ~= "" and title ~= nil then
 					pub.save_state(require("resurrect.window_state").get_window_state(mux_win))
 				end
@@ -68,10 +72,12 @@ function pub.periodic_save(opts)
 		end
 
 		if opts.save_tabs then
+			print("- Save tabs state")
 			for _, gui_win in ipairs(wezterm.gui.gui_windows()) do
 				local mux_win = gui_win:mux_window()
 				for _, mux_tab in ipairs(mux_win:tabs()) do
 					local title = mux_tab:get_title()
+					print("  - Tab: ", title)
 					if title ~= "" and title ~= nil then
 						pub.save_state(require("resurrect.tab_state").get_tab_state(mux_tab))
 					end
