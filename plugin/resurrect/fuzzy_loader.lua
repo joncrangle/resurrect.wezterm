@@ -131,7 +131,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 					local date = os.date(opts.date_format, tonumber(epoch))
 					max_length = math.max(max_length, #filename)
 					table.insert(files, {
-						id = type .. Separator .. file,
+						id = type .. Separator .. filename,
 						filename = filename,
 						date = date,
 					})
