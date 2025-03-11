@@ -173,6 +173,8 @@ function pub.fuzzy_load(window, pane, callback, opts)
 		insert_choices("tab", opts.fmt_tab)
 	end
 
+	print(state_files)
+
 	window:perform_action(
 		wezterm.action.InputSelector({
 			action = wezterm.action_callback(function(_, _, id, label)
