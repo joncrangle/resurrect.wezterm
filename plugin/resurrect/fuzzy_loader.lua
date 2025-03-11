@@ -179,6 +179,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 		wezterm.action.InputSelector({
 			action = wezterm.action_callback(function(_, _, id, label)
 				if id and label then
+					print(id)
 					callback(id, label, require("resurrect.state_manager").save_state_dir)
 				end
 				wezterm.emit("resurrect.fuzzy_loader.fuzzy_load.finished", window, pane)
