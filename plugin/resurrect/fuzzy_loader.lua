@@ -85,7 +85,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 
 	local function execute(type)
 		-- Command-line recipe based on OS
-		local path = folder .. Separator .. type
+		local path = folder .. type
 		local cmd
 		if Is_windows then
 			cmd = "powershell -Command \"Get-ChildItem -Path '"
@@ -105,16 +105,12 @@ function pub.fuzzy_load(window, pane, callback, opts)
 		end
 
 		local stdout = handle:read("*a")
-		if stdout == nil or stdout == "" then
+		if stdout == nil then
 			wezterm.emit("resurrect.error", "No output when running: " .. cmd)
-			if stdout == "" then
-				handle:close()
-			end
 			return ""
 		end
 
 		handle:close()
-
 		return stdout
 	end
 
