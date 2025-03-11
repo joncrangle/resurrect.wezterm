@@ -67,110 +67,126 @@ function pub.fuzzy_load(window, pane, callback, opts)
 		end
 	end
 
-	-- local function insert_choices(type, fmt)
-	-- end
+	local folder = require("resurrect.state_manager").save_state_dir
 
-	local max_length = 0
+	local function def_insert_choices(type, fmt)
+		for _, file in ipairs(wezterm.glob("*", folder .. Separator .. type)) do
+			local label
+			local id = type .. Separator .. file
 
-	local function insert_choices(type, fmt)
-		local folder = require("resurrect.state_manager").save_state_dir
-		local fallback = function(root_folder, state_type, state_fmt)
-			for _, file in ipairs(wezterm.glob("*", root_folder .. Separator .. state_type)) do
-				local label
-				local id = type .. Separator .. file
-
-				if state_fmt then
-					label = state_fmt(file)
-				else
-					label = file
-				end
-				table.insert(state_files, { id = id, label = label })
+			if fmt then
+				label = fmt(file)
+			else
+				label = file
 			end
+			table.insert(state_files, { id = id, label = label })
+		end
+	end
+
+	local function execute(type)
+		-- Command-line recipe based on OS
+		local path = folder .. Separator .. type
+		local cmd
+		if Is_windows then
+			cmd = "powershell -Command \"Get-ChildItem -Path '"
+				.. path
+				.. '\' | ForEach-Object { "$($_.LastWriteTime.ToFileTimeUtc()) $($_.Name)" }"'
+		elseif Is_mac then
+			cmd = 'stat -f "%m %N" ' .. path .. "/*"
+		else -- last option: Linux-like
+			cmd = 'ls -l --time-style=+"%s" ' .. path .. " | awk '{print $6,$7,$9}'"
 		end
 
-		if opts.show_state_with_date then
-			local files = {}
+		-- Execute the command and capture stdout
+		local handle = io.popen(cmd)
+		if handle == nil then
+			wezterm.emit("resurrect.error", "Could not open process: " .. cmd)
+			return ""
+		end
 
-			-- Command-line recipe based on OS
-			local cmd
-			if Is_windows then
-				cmd = "powershell -Command \"Get-ChildItem -Path '"
-					.. folder
-					.. '\' | ForEach-Object { "$($_.LastWriteTime.ToFileTimeUtc()) $($_.Name)" }"'
-			elseif Is_mac then
-				cmd = 'stat -f "%m %N" ' .. folder .. Separator .. type .. "/*"
-			else -- last option: Linux-like
-				cmd = 'ls -l --time-style=+"%s" ' .. folder .. Separator .. type(" | awk '{print $6,$7,$9}'")
+		local stdout = handle:read("*a")
+		if stdout == nil or stdout == "" then
+			wezterm.emit("resurrect.error", "No output when running: " .. cmd)
+			if stdout == "" then
+				handle:close()
 			end
+			return ""
+		end
 
-			-- Execute the command and capture stdout
-			local handle = io.popen(cmd)
-			if handle == nil then
-				wezterm.emit("resurrect.error", "Could not open process: " .. cmd)
-				fallback(folder, type, fmt) -- Execute the fallback function
-				return
-			end
+		handle:close()
 
-			local stdout = handle:read("*a")
-			if stdout == nil or stdout == "" then
-				wezterm.emit("resurrect.error", "No output when running: " .. cmd)
-				fallback(folder, type, fmt) -- Execute the fallback function
+		return stdout
+	end
+
+	local function insert_choices()
+		local files = {}
+		local max_length = 0
+
+		-- collect all the included files
+		local types = { "workspace", "window", "tab" }
+		for _, type in types do
+			local include = not opts[string.format("ignore_%ss", type)]
+			if include then
+				local fmt = opts[string.format("fmt_%s", type)]
+
+				local stdout = execute(type)
+
 				if stdout == "" then
-					handle:close()
-				end
-				return
-			end
-
-			handle:close()
-
-			-- Parse the stdout and construct the file table
-			for line in stdout:gmatch("[^\n]+") do
-				local epoch, file = line:match("(%d+)%s+(.+)")
-				if epoch and file then
-					local filename, ext = file:match("^.*" .. Separator .. "(.+)%.(.*)$")
-					local date = os.date(opts.date_format, tonumber(epoch))
-					max_length = math.max(max_length, #filename)
-					table.insert(files, {
-						id = type .. Separator .. filename .. "." .. ext,
-						filename = filename,
-						date = date,
-					})
-				end
-			end
-
-			for _, file in ipairs(files) do
-				local padding = " "
-				if #file.filename < max_length then
-					padding = padding .. string.rep(".", max_length - #file.filename - 1) .. padding
-				end
-				local label = ""
-				if fmt then
-					label = fmt(file.filename .. padding)
+					def_insert_choices(type, fmt)
 				else
-					label = file.filename .. padding
+					-- Parse the stdout and construct the file table
+					for line in stdout:gmatch("[^\n]+") do
+						local epoch, file = line:match("(%d+)%s+(.+)")
+						if epoch and file then
+							local filename, ext = file:match("^.*" .. Separator .. "(.+)%.(.*)$")
+							local date = os.date(opts.date_format, tonumber(epoch))
+							max_length = math.max(max_length, #filename)
+							table.insert(files, {
+								id = type .. Separator .. filename .. "." .. ext,
+								filename = filename,
+								date = date,
+								fmt = fmt,
+							})
+						end
+					end
 				end
-				if opts.fmt_date then
-					label = label .. " " .. opts.fmt_date(file.date)
-				else
-					label = label .. " " .. file.date
-				end
-				table.insert(state_files, { id = file.id, label = label })
 			end
-		else
-			fallback(folder, type, fmt)
+		end
+
+		for _, file in ipairs(files) do
+			local padding = " "
+			if #file.filename < max_length then
+				padding = padding .. string.rep(".", max_length - #file.filename - 1) .. padding
+			end
+			local label = ""
+			if file.fmt then
+				label = file.fmt(file.filename .. padding)
+			else
+				label = file.filename .. padding
+			end
+			if opts.fmt_date then
+				label = label .. " " .. opts.fmt_date(file.date)
+			else
+				label = label .. " " .. file.date
+			end
+			table.insert(state_files, { id = file.id, label = label })
 		end
 	end
 
-	if not opts.ignore_workspaces then
-		insert_choices("workspace", opts.fmt_workspace)
-	end
+	if opts.show_state_with_date then
+		insert_choices()
+	else
+		if not opts.ignore_workspaces then
+			def_insert_choices("workspace", opts.fmt_workspace)
+		end
 
-	if not opts.ignore_windows then
-		insert_choices("window", opts.fmt_window)
-	end
+		if not opts.ignore_windows then
+			def_insert_choices("window", opts.fmt_window)
+		end
 
-	if not opts.ignore_tabs then
-		insert_choices("tab", opts.fmt_tab)
+		if not opts.ignore_tabs then
+			def_insert_choices("tab", opts.fmt_tab)
+		end
 	end
 
 	window:perform_action(
