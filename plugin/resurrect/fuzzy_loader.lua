@@ -124,7 +124,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 
 		-- collect all the included files
 		local types = { "workspace", "window", "tab" }
-		for _, type in types do
+		for _, type in ipairs(types) do
 			local include = not opts[string.format("ignore_%ss", type)]
 			if include then
 				local fmt = opts[string.format("fmt_%s", type)]
