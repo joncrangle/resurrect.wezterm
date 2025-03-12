@@ -1,5 +1,6 @@
 local wezterm = require("wezterm")
 local file_io = require("resurrect.file_io")
+local utils = require("plugin.resurrect.utils")
 
 local pub = {}
 
@@ -11,7 +12,12 @@ local function get_file_path(file_name, type, opt_name)
 	if opt_name then
 		file_name = opt_name
 	end
-	return string.format("%s%s" .. Separator .. "%s.json", pub.save_state_dir, type, file_name:gsub(Separator, "+"))
+	return string.format(
+		"%s%s" .. utils.separator .. "%s.json",
+		pub.save_state_dir,
+		type,
+		file_name:gsub(utils.separator, "+")
+	)
 end
 
 ---save state to a file
@@ -90,7 +96,7 @@ end
 ---@return boolean
 ---@return string|nil
 function pub.write_current_state(name, type)
-	local file_path = pub.save_state_dir .. Separator .. "current_state"
+	local file_path = pub.save_state_dir .. utils.separator .. "current_state"
 	local suc, err = pcall(function()
 		local file = io.open(file_path, "w+")
 		if not file then
@@ -107,7 +113,7 @@ end
 ---@return boolean
 ---@return string|nil
 function pub.resurrect_on_gui_startup()
-	local file_path = pub.save_state_dir .. Separator .. "current_state"
+	local file_path = pub.save_state_dir .. utils.separator .. "current_state"
 	print(file_path)
 	local suc, err = pcall(function()
 		local file = io.open(file_path, "r")
@@ -155,10 +161,10 @@ function pub.change_state_save_dir(directory)
 		string.gsub(directory, "%s+", ""), -- trim any trailing space
 		"[\\/]$",
 		"" -- remove any trailing \ or /
-	) .. Separator -- add a trailing separator
+	) .. utils.separator -- add a trailing separator
 	-- ensure that subfolders exist
 
-	if Is_windows then
+	if utils.is_windows then
 		os.execute("mkdir " .. pub.save_state_dir .. "tab")
 		os.execute("mkdir " .. pub.save_state_dir .. "window")
 		os.execute("mkdir " .. pub.save_state_dir .. "workspace")

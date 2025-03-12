@@ -1,4 +1,5 @@
 local wezterm = require("wezterm")
+local utils = require("resurrect.utils")
 local pub = {}
 
 ---@alias fmt_fun fun(label: string): string
@@ -70,9 +71,9 @@ function pub.fuzzy_load(window, pane, callback, opts)
 	local folder = require("resurrect.state_manager").save_state_dir
 
 	local function def_insert_choices(type, fmt)
-		for _, file in ipairs(wezterm.glob("*", folder .. Separator .. type)) do
+		for _, file in ipairs(wezterm.glob("*", folder .. utils.separator .. type)) do
 			local label
-			local id = type .. Separator .. file
+			local id = type .. utils.separator .. file
 
 			if fmt then
 				label = fmt(file)
@@ -87,11 +88,11 @@ function pub.fuzzy_load(window, pane, callback, opts)
 		-- Command-line recipe based on OS
 		local path = folder .. type
 		local cmd
-		if Is_windows then
+		if utils.is_windows then
 			cmd = "powershell -Command \"Get-ChildItem -Path '"
 				.. path
 				.. '\' | ForEach-Object { "$($_.LastWriteTime.ToFileTimeUtc()) $($_.Name)" }"'
-		elseif Is_mac then
+		elseif utils.is_mac then
 			cmd = 'stat -f "%m %N" ' .. path .. "/*"
 		else -- last option: Linux-like
 			cmd = 'ls -l --time-style=+"%s" ' .. path .. " | awk '{print $6,$7,$9}'"
@@ -134,11 +135,11 @@ function pub.fuzzy_load(window, pane, callback, opts)
 					for line in stdout:gmatch("[^\n]+") do
 						local epoch, file = line:match("(%d+)%s+(.+)")
 						if epoch and file then
-							local filename, ext = file:match("^.*" .. Separator .. "(.+)%.(.*)$")
+							local filename, ext = file:match("^.*" .. utils.separator .. "(.+)%.(.*)$")
 							local date = os.date(opts.date_format, tonumber(epoch))
 							max_length = math.max(max_length, #filename)
 							table.insert(files, {
-								id = type .. Separator .. filename .. "." .. ext,
+								id = type .. utils.separator .. filename .. "." .. ext,
 								filename = filename,
 								date = date,
 								fmt = fmt,
