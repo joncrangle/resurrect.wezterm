@@ -9,7 +9,7 @@ local dev = true
 --- checks if the user is on Windows or MacOS and create globals
 local is_windows = wezterm.target_triple == "x86_64-pc-windows-msvc"
 local is_mac = (wezterm.target_triple == "x86_64-apple-darwin" or wezterm.target_triple == "aarch64-apple-darwin")
-local separator = utils.is_windows and "\\" or "/"
+local separator = is_windows and "\\" or "/"
 
 --- Checks if the plugin directory exists
 --- @return boolean
@@ -62,12 +62,11 @@ local function enable_sub_modules()
 	if dev then
 		plugin_dir = get_require_dev_path()
 	else
-		local plugin_base_dir =
-			wezterm.plugin.list()[1].plugin_dir:gsub(utils.separator .. "[^" .. utils.separator .. "]*$", "")
+		local plugin_base_dir = wezterm.plugin.list()[1].plugin_dir:gsub(separator .. "[^" .. separator .. "]*$", "")
 		plugin_dir = get_require_path(plugin_base_dir)
 	end
 	if plugin_dir ~= "" then
-		package.path = package.path .. ";" .. plugin_dir .. utils.separator .. "plugin" .. utils.separator .. "?.lua"
+		package.path = package.path .. ";" .. plugin_dir .. separator .. "plugin" .. separator .. "?.lua"
 	end
 	return plugin_dir
 end
@@ -79,9 +78,7 @@ local function init()
 		wezterm.emit("resurrect.init_error", "Plugin folder not found")
 		error("Could not find the plugin folder")
 	else
-		require("resurrect.state_manager").change_state_save_dir(
-			plugin_dir .. utils.separator .. "state" .. utils.separator
-		)
+		require("resurrect.state_manager").change_state_save_dir(plugin_dir .. separator .. "state" .. separator)
 
 		-- Export submodules
 		pub.workspace_state = require("resurrect.workspace_state")
