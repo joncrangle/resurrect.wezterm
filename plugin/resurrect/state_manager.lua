@@ -1,6 +1,6 @@
 local wezterm = require("wezterm") --[[@as Wezterm]] --- this type cast invokes the LSP module for Wezterm
 local file_io = require("resurrect.file_io")
-local utils = require("plugin.resurrect.utils")
+local utils = require("resurrect.utils")
 
 local pub = {}
 
