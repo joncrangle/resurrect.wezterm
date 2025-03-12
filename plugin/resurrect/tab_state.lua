@@ -84,9 +84,7 @@ local function close_all_other_panes(tab, pane_to_keep)
 	for _, pane in ipairs(tab:panes()) do
 		if pane:pane_id() ~= pane_to_keep:pane_id() then
 			pane:activate()
-			tab:window()
-				:gui_window()
-				:perform_action(wezterm.action.CloseCurrentPane({ confirm = false }), pane)
+			tab:window():gui_window():perform_action(wezterm.action.CloseCurrentPane({ confirm = false }), pane)
 		end
 	end
 end
@@ -102,14 +100,14 @@ function pub.restore_tab(tab, tab_state, opts)
 	else
 		local split_args = { cwd = tab_state.pane_tree.cwd }
 		if tab_state.pane_tree.domain then
-				split_args.domain = { DomainName = tab_state.pane_tree.domain }
-			end
-			local new_pane = tab:active_pane():split(split_args)
-			tab_state.pane_tree.pane = new_pane
+			split_args.domain = { DomainName = tab_state.pane_tree.domain }
+		end
+		local new_pane = tab:active_pane():split(split_args)
+		tab_state.pane_tree.pane = new_pane
 	end
 
 	if opts.close_open_panes then
-			close_all_other_panes(tab, tab_state.pane_tree.pane)
+		close_all_other_panes(tab, tab_state.pane_tree.pane)
 	end
 
 	if tab_state.title then
@@ -123,7 +121,7 @@ end
 
 function pub.save_tab_action()
 	return wezterm.action_callback(function(win, pane)
-		local resurrect = wezterm.plugin.require("https://github.com/MLFlexer/resurrect.wezterm")
+		local resurrect = require("resurrect")
 		local tab = pane:tab()
 		if tab:get_title() == "" then
 			win:perform_action(

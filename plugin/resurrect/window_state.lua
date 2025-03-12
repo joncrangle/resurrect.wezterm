@@ -85,7 +85,7 @@ end
 
 function pub.save_window_action()
 	return wezterm.action_callback(function(win, pane)
-		local resurrect = wezterm.plugin.require("https://github.com/MLFlexer/resurrect.wezterm")
+		local resurrect = require("resurrect")
 		local mux_win = win:mux_window()
 		if mux_win:get_title() == "" then
 			win:perform_action(
