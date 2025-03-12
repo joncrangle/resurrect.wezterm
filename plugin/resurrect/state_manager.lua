@@ -52,7 +52,7 @@ function pub.periodic_save(opts)
 		opts.interval_seconds = 60 * 15
 	end
 	wezterm.time.call_after(opts.interval_seconds, function()
-		wezterm.emit("resurrect.state_manager.periodic_save", opts)
+		wezterm.emit("resurrect.state_manager.periodic_save.start", opts)
 		if opts.save_workspaces then
 			pub.save_state(require("resurrect.workspace_state").get_workspace_state())
 		end
@@ -79,6 +79,7 @@ function pub.periodic_save(opts)
 			end
 		end
 
+		wezterm.emit("resurrect.state_manager.periodic_save.finished", opts)
 		pub.periodic_save(opts)
 	end)
 end

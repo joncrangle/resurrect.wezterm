@@ -248,6 +248,7 @@ Options for restoring state:
 relative: boolean?, -- Use relative size when restoring panes
 absolute: boolean?, -- Use absolute size when restoring panes
 close_open_tabs: boolean?, -- Closes all tabs which are open in the window, only restored tabs are left
+close_open_panes: boolean?, -- Closes all panes which are open in the tab, only keeping the panes to be restored
 pane: Pane?, -- Restore in this window
 tab: MuxTab?, -- Restore in this window
 window: MuxWindow, -- Restore in this window
@@ -326,9 +327,10 @@ This plugin emits the following events that you can use for your own callback fu
 - `resurrect.state_manager.delete_state.start(file_path)`
 - `resurrect.state_manager.load_state.finished(name, type)`
 - `resurrect.state_manager.load_state.start(name, type)`
-- `resurrect.state_manager.periodic_save(opts)`
-- `resurrect.state_manager.save_state.finished(file_path, event_type)`
-- `resurrect.state_manager.save_state.start(file_path, event_type)`
+- `resurrect.state_manager.periodic_save.start(opts)`
+- `resurrect.state_manager.periodic_save.finished(opts)`
+- `resurrect.file_io.write_state.finished(file_path, event_type)`
+- `resurrect.file_io.write_state.start(file_path, event_type)`
 - `resurrect.tab_state.restore_tab.finished`
 - `resurrect.tab_state.restore_tab.start`
 - `resurrect.window_state.restore_window.finished`

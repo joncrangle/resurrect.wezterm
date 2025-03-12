@@ -1,3 +1,4 @@
+state/current_state.txt
 # Compiled Lua sources
 luac.out
 
