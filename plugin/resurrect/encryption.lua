@@ -3,6 +3,10 @@ local wezterm = require("wezterm")
 
 local utils = require("plugin.resurrect.utils")
 
+print(utils.is_mac)
+print(utils.is_windows)
+print(utils.separator)
+
 ---@type encryption_opts
 local pub = {
 	enable = false,
