@@ -1,4 +1,4 @@
-local wezterm = require("wezterm")
+local wezterm = require("wezterm") --[[@as Wezterm]] --- this type cast invokes the LSP module for Wezterm
 
 local pub = {}
 
@@ -7,9 +7,9 @@ local plugin_name = "resurrectsDswezterm"
 local dev = true
 
 --- checks if the user is on Windows or MacOS and create globals
-is_windows = wezterm.target_triple == "x86_64-pc-windows-msvc"
-is_mac = (wezterm.target_triple == "x86_64-apple-darwin" or wezterm.target_triple == "aarch64-apple-darwin")
-separator = utils.is_windows and "\\" or "/"
+local is_windows = wezterm.target_triple == "x86_64-pc-windows-msvc"
+local is_mac = (wezterm.target_triple == "x86_64-apple-darwin" or wezterm.target_triple == "aarch64-apple-darwin")
+local separator = utils.is_windows and "\\" or "/"
 
 --- Checks if the plugin directory exists
 --- @return boolean
@@ -89,12 +89,6 @@ local function init()
 		pub.tab_state = require("resurrect.tab_state")
 		pub.fuzzy_loader = require("resurrect.fuzzy_loader")
 		pub.state_manager = require("resurrect.state_manager")
-		pub.utils = require("plugin.resurrect.utils")
-
-		-- cache the os parameter
-		pub.utils.is_mac = is_mac
-		pub.utils.is_windows = is_windows
-		pub.utils.separator = separator
 	end
 end
 
