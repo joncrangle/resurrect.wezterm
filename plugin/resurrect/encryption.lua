@@ -3,10 +3,6 @@ local wezterm = require("wezterm") --[[@as Wezterm]] --- this type cast invokes 
 
 local utils = require("resurrect.utils")
 
-print(utils.is_mac)
-print(utils.is_windows)
-print(utils.separator)
-
 ---@type encryption_opts
 local pub = {
 	enable = false,
