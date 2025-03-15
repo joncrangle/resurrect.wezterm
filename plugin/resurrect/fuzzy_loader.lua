@@ -138,14 +138,16 @@ function pub.fuzzy_load(window, pane, callback, opts)
 						local epoch, file = line:match("(%d+)%s+(.+)")
 						if epoch and file then
 							local filename, ext = file:match("^.*" .. utils.separator .. "(.+)%.(.*)$")
-							local date = os.date(opts.date_format, tonumber(epoch))
-							max_length = math.max(max_length, #filename)
-							table.insert(files, {
-								id = type .. utils.separator .. filename .. "." .. ext,
-								filename = filename,
-								date = date,
-								fmt = fmt,
-							})
+							if filename ~= "" then
+								local date = os.date(opts.date_format, tonumber(epoch))
+								max_length = math.max(max_length, #filename)
+								table.insert(files, {
+									id = type .. utils.separator .. filename .. "." .. ext,
+									filename = filename,
+									date = date,
+									fmt = fmt,
+								})
+							end
 						end
 					end
 				end
