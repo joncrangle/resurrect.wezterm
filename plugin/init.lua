@@ -8,7 +8,6 @@ local dev = false
 
 --- checks if the user is on Windows or MacOS and create globals
 local is_windows = wezterm.target_triple == "x86_64-pc-windows-msvc"
-local is_mac = (wezterm.target_triple == "x86_64-apple-darwin" or wezterm.target_triple == "aarch64-apple-darwin")
 local separator = is_windows and "\\" or "/"
 
 --- Checks if the plugin directory exists
@@ -32,15 +31,9 @@ end
 
 --- Returns the name of the package, used when requiring modules
 --- @return string
-local function get_require_path(plugin_base_dir)
-	plugin_base_dir = plugin_base_dir .. separator
-	wezterm.log_info("Base dir:", plugin_base_dir)
-	local path =
-		"/home/chris/.var/app/org.wezfurlong.wezterm/data/wezterm/plugins/httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDswezterm"
-	wezterm.log_info("First attempt :", path)
-	if directory_exists(path) then
-		return path
-	end
+local function get_require_path()
+	local path
+	local plugin_dir = wezterm.plugin.list()[1].plugin_dir:gsub(separator .. "[^" .. separator .. "]*$", "")
 	local folders = {
 		"httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDswezterm", -- sources with https
 		"httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDsweztermsZs",
@@ -51,22 +44,42 @@ local function get_require_path(plugin_base_dir)
 		"httpsCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDswezterm", -- source with http
 		"httpsCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDsweztermsZs",
 	}
-	-- check which variant is installed
-	for _, folder in ipairs(folders) do
-		path = plugin_base_dir .. folder
-		wezterm.log_info("Searching:", folder)
+	for folder in ipairs(folders) do
+		path = plugin_dir .. folder
 		if directory_exists(path) then
 			return path
 		end
 	end
-	-- last resort we try the development folder
-	path = get_require_dev_path()
-	if directory_exists(path) then
-		return path
-	end
-	-- at this point no folder was found
 	return ""
 end
+
+-- --- Returns the name of the package, used when requiring modules
+-- --- @return string
+-- local function get_require_path(plugin_base_dir)
+-- 	plugin_base_dir = plugin_base_dir .. separator
+-- 	wezterm.log_info("Base dir:", plugin_base_dir)
+-- 	local path =
+-- 		"/home/chris/.var/app/org.wezfurlong.wezterm/data/wezterm/plugins/httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDswezterm"
+-- 	wezterm.log_info("First attempt :", path)
+-- 	if directory_exists(path) then
+-- 		return path
+-- 	end
+-- 	-- check which variant is installed
+-- 	for _, folder in ipairs(folders) do
+-- 		path = plugin_base_dir .. folder
+-- 		wezterm.log_info("Searching:", folder)
+-- 		if directory_exists(path) then
+-- 			return path
+-- 		end
+-- 	end
+-- 	-- last resort we try the development folder
+-- 	path = get_require_dev_path()
+-- 	if directory_exists(path) then
+-- 		return path
+-- 	end
+-- 	-- at this point no folder was found
+-- 	return ""
+-- end
 
 --- adds the resurrect.wezterm plugin directory to the lua path and return its path
 local function enable_sub_modules()
@@ -74,7 +87,7 @@ local function enable_sub_modules()
 	if dev then
 		plugin_dir = get_require_dev_path()
 	else
-		local plugin_base_dir = wezterm.plugin.list()[1].plugin_dir:gsub(separator .. "[^" .. separator .. "]*$", "")
+		-- local plugin_base_dir = wezterm.plugin.list()[1].plugin_dir:gsub(separator .. "[^" .. separator .. "]*$", "")
 		plugin_dir = get_require_path(plugin_base_dir)
 		wezterm.log_info("Returned dir:", plugin_dir)
 	end
