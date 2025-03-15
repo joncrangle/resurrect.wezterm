@@ -91,7 +91,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 		local cmd
 		if utils.is_windows then
 			cmd = string.format(
-				'for /f "delims=" %%i in (\'dir /a-h /b "%s" ^| findstr /v "^\\.*"\') do @echo %%~ti %%~fi',
+				"powershell -Command \"Get-ChildItem -Path %q -File | Where-Object { -not $_.Name.StartsWith('.') } | ForEach-Object { [math]::Floor([decimal](Get-Date $_.LastWriteTime -UFormat '%%s')), $_.FullName }\"",
 				path
 			)
 			-- cmd = string.format(
