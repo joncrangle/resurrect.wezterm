@@ -153,6 +153,8 @@ function pub.fuzzy_load(window, pane, callback, opts)
 					end
 				end
 			end
+			wezterm.log_info("file table:", files)
+			wezterm.log_info("max len:", max_length)
 		end
 
 		for _, file in ipairs(files) do
