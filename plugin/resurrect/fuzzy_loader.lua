@@ -90,9 +90,10 @@ function pub.fuzzy_load(window, pane, callback, opts)
 		wezterm.log_info("Path:", path)
 		local cmd
 		if utils.is_windows then
-			cmd = "powershell -Command \"Get-ChildItem -Path '"
-				.. path
-				.. '\' | ForEach-Object { "$($_.LastWriteTime.ToFileTimeUtc()) $($_.Name)" }"'
+			cmd = string.format(
+				"powershell -Command \"Get-ChildItem -Path %q -File | Where-Object { -not $_.Name.StartsWith('.') } | ForEach-Object { [math]::Floor([decimal](Get-Date $_.LastWriteTime -UFormat '%%s')), $_.FullName }\"",
+				path
+			)
 		elseif utils.is_mac then
 			cmd = 'stat -f "%m %N" "' .. path .. '"/*'
 		else -- last option: Linux-like
