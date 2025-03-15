@@ -169,6 +169,7 @@ function pub.change_state_save_dir(directory)
 		os.execute("mkdir " .. pub.save_state_dir .. "window")
 		os.execute("mkdir " .. pub.save_state_dir .. "workspace")
 	else
+		print("Save dir:", pub.save_state_dir)
 		os.execute("mkdir -p " .. pub.save_state_dir .. "tab")
 		os.execute("mkdir -p " .. pub.save_state_dir .. "window")
 		os.execute("mkdir -p " .. pub.save_state_dir .. "workspace")
