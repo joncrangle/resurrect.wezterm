@@ -127,6 +127,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 				local fmt = opts[string.format("fmt_%s", type)]
 
 				local stdout = execute(type)
+				wezterm.log_info(stdout) --
 
 				if stdout == "" then
 					def_insert_choices(type, fmt)
