@@ -96,7 +96,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 		elseif utils.is_mac then
 			cmd = 'stat -f "%m %N" "' .. path .. '"/*'
 		else -- last option: Linux-like
-			cmd = 'ls -l --time-style=+"%s" "' .. path .. '" | awk "{print $6,$7,$9}"'
+			cmd = 'ls -l --time-style=+"%s" "' .. path .. "\" | awk '{print $6,$7,$9}'"
 		end
 
 		-- Execute the command and capture stdout
