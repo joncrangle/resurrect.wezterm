@@ -33,6 +33,7 @@ end
 --- Returns the name of the package, used when requiring modules
 --- @return string
 local function get_require_path(plugin_base_dir)
+	print(plugin_base_dir)
 	local path
 	local folders = {
 		"httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDswezterm", -- sources with https
@@ -46,7 +47,7 @@ local function get_require_path(plugin_base_dir)
 	}
 	-- check which variant is installed
 	for _, folder in ipairs(folders) do
-		path = plugin_base_dir .. folder
+		path = plugin_base_dir .. separator .. folder
 		if directory_exists(path) then
 			return path
 		end
