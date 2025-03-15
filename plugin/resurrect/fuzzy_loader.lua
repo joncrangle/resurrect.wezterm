@@ -87,6 +87,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 	local function execute(type)
 		-- Command-line recipe based on OS
 		local path = folder .. type
+		wezterm.log_info("Path:", path)
 		local cmd
 		if utils.is_windows then
 			cmd = "powershell -Command \"Get-ChildItem -Path '"
@@ -127,7 +128,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 				local fmt = opts[string.format("fmt_%s", type)]
 
 				local stdout = execute(type)
-				wezterm.log_info(stdout) --
+				wezterm.log_info("blob:'", stdout, "'") --
 
 				if stdout == "" then
 					def_insert_choices(type, fmt)
