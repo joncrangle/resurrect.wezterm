@@ -139,6 +139,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 						if epoch and file then
 							wezterm.log_info("epoch:", epoch, " file:", file)
 							local filename, ext = file:match("^.*" .. utils.separator .. "(.+)%.(.*)$")
+							wezterm.log_info("filename:", filename, "ext:", ext)
 							if filename ~= nil and filename ~= "" then
 								local date = os.date(opts.date_format, tonumber(epoch))
 								max_length = math.max(max_length, #filename)
