@@ -141,9 +141,9 @@ function pub.fuzzy_load(window, pane, callback, opts)
 					-- Parse the stdout and construct the file table
 					for line in stdout:gmatch("[^\n]+") do
 						local epoch, file = line:match("(%d+)%s+(.+)")
-						if utils.is_linux then
-							file = folder .. type .. utils.separator .. file
-						end
+						-- if utils.is_linux then
+						-- 	file = folder .. type .. utils.separator .. file
+						-- end
 						if epoch and file then
 							wezterm.log_info("epoch:", epoch, " file:", file)
 							local filename, ext = file:match("^.*" .. utils.separator .. "(.+)%.(.*)$")
