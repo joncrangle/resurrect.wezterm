@@ -175,6 +175,8 @@ function pub.fuzzy_load(window, pane, callback, opts)
 		end
 	end
 
+	wezterm.log_info("table:", state_files)
+
 	if opts.show_state_with_date then
 		insert_choices()
 	else
