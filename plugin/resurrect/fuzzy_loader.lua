@@ -91,9 +91,13 @@ function pub.fuzzy_load(window, pane, callback, opts)
 		local cmd
 		if utils.is_windows then
 			cmd = string.format(
-				"powershell -Command \"Get-ChildItem -Path %q -File | Where-Object { -not $_.Name.StartsWith('.') } | ForEach-Object { [math]::Floor([decimal](Get-Date $_.LastWriteTime -UFormat '%%s')), $_.FullName }\"",
+				'for /f "delims=" %%i in (\'dir /a-h /b "%s" ^| findstr /v "^\\.*"\') do @echo %%~ti %%~fi',
 				path
 			)
+			-- cmd = string.format(
+			-- 	"powershell -Command \"Get-ChildItem -Path %q -File | Where-Object { -not $_.Name.StartsWith('.') } | ForEach-Object { [math]::Floor([decimal](Get-Date $_.LastWriteTime -UFormat '%%s')), $_.FullName }\"",
+			-- 	path
+			-- )
 		elseif utils.is_mac then
 			cmd = 'stat -f "%m %N" "' .. path .. '"/*'
 		else -- last option: Linux-like
@@ -142,11 +146,8 @@ function pub.fuzzy_load(window, pane, callback, opts)
 					-- Parse the stdout and construct the file table
 					for line in stdout:gmatch("[^\n]+") do
 						local epoch, file = line:match("(%d+)%s+(.+)")
-						-- if utils.is_linux then
-						-- 	file = folder .. type .. utils.separator .. file
-						-- end
+						wezterm.log_info("epoch:", epoch, " file:", file)
 						if epoch and file then
-							wezterm.log_info("epoch:", epoch, " file:", file)
 							local filename, ext = file:match("^.*" .. utils.separator .. "(.+)%.(.*)$")
 							wezterm.log_info("filename:", filename, "ext:", ext)
 							if filename ~= nil and filename ~= "" then
