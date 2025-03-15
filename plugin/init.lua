@@ -49,6 +49,7 @@ local function get_require_path()
 		path = plugin_dir .. folder
 		wezterm.log_info("Searching:", path)
 		if directory_exists(path) then
+			wezterm.log_info("Found:", path)
 			return path
 		end
 	end
