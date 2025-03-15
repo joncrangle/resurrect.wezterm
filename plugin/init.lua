@@ -1,123 +1,57 @@
-local wezterm = require("wezterm") --[[@as Wezterm]] --- this type cast invokes the LSP module for Wezterm
+local wezterm = require("wezterm")
 
 local pub = {}
 
-local source_name = "file"
-local plugin_name = "resurrectsDswezterm"
-local dev = false
+local plugin_dir
 
---- checks if the user is on Windows or MacOS and create globals
+--- checks if the user is on windows
 local is_windows = wezterm.target_triple == "x86_64-pc-windows-msvc"
 local separator = is_windows and "\\" or "/"
 
 --- Checks if the plugin directory exists
 --- @return boolean
 local function directory_exists(path)
-	local success, result = pcall(wezterm.read_dir, path)
+	local success, result = pcall(wezterm.read_dir, plugin_dir .. path)
 	return success and result
-end
-
---- Returns the name of the package during development, used when requiring modules
---- @return string
-local function get_require_dev_path()
-	local result = ""
-	for _, plugin in ipairs(wezterm.plugin.list()) do
-		if plugin.component:find(plugin_name) and (plugin.component:find(source_name) or source_name == "") then
-			result = plugin.plugin_dir
-		end
-	end
-	return result
 end
 
 --- Returns the name of the package, used when requiring modules
 --- @return string
 local function get_require_path()
-	local path
-	local plugin_dir = wezterm.plugin.list()[1].plugin_dir:gsub(separator .. "[^" .. separator .. "]*$", "")
-		.. separator
-	local folders = {
-		"httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDswezterm", -- sources with https
-		"httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDsweztermsZs",
-		"httpsCssZssZsgithubsDscomsZschrisgvesZsresurrectsDswezterm", -- source with http
-		"httpsCssZssZsgithubsDscomsZschrisgvesZsresurrectsDsweztermsZs",
-		"httpssCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDswezterm", -- sources with https
-		"httpssCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDsweztermsZs",
-		"httpsCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDswezterm", -- source with http
-		"httpsCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDsweztermsZs",
-	}
-	for _, folder in ipairs(folders) do
-		path = plugin_dir .. folder
-		wezterm.log_info("Searching:", path)
-		if directory_exists(path) then
-			wezterm.log_info("Found:", path)
-			return path
-		end
-	end
-	return ""
+	local path1 = "httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDswezterm"
+	local path2 = "httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDsweztermsZs"
+	-- local path1 = "httpssCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDswezterm"
+	-- local path2 = "httpssCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDsweztermsZs"
+	return directory_exists(path2) and path2 or path1
 end
 
--- --- Returns the name of the package, used when requiring modules
--- --- @return string
--- local function get_require_path(plugin_base_dir)
--- 	plugin_base_dir = plugin_base_dir .. separator
--- 	wezterm.log_info("Base dir:", plugin_base_dir)
--- 	local path =
--- 		"/home/chris/.var/app/org.wezfurlong.wezterm/data/wezterm/plugins/httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDswezterm"
--- 	wezterm.log_info("First attempt :", path)
--- 	if directory_exists(path) then
--- 		return path
--- 	end
--- 	-- check which variant is installed
--- 	for _, folder in ipairs(folders) do
--- 		path = plugin_base_dir .. folder
--- 		wezterm.log_info("Searching:", folder)
--- 		if directory_exists(path) then
--- 			return path
--- 		end
--- 	end
--- 	-- last resort we try the development folder
--- 	path = get_require_dev_path()
--- 	if directory_exists(path) then
--- 		return path
--- 	end
--- 	-- at this point no folder was found
--- 	return ""
--- end
-
---- adds the resurrect.wezterm plugin directory to the lua path and return its path
+--- adds the wezterm plugin directory to the lua path
 local function enable_sub_modules()
-	local plugin_dir
-	if dev then
-		plugin_dir = get_require_dev_path()
-	else
-		-- local plugin_base_dir = wezterm.plugin.list()[1].plugin_dir:gsub(separator .. "[^" .. separator .. "]*$", "")
-		plugin_dir = get_require_path()
-		wezterm.log_info("Returned dir:", plugin_dir)
-	end
-	if plugin_dir ~= "" then
-		local path = plugin_dir .. separator .. "plugin" .. separator .. "?.lua"
-		wezterm.log_info("Plugin path:", path)
-		package.path = package.path .. ";" .. path
-	end
-	return plugin_dir
+	plugin_dir = wezterm.plugin.list()[1].plugin_dir:gsub(separator .. "[^" .. separator .. "]*$", "")
+	package.path = package.path
+		.. ";"
+		.. plugin_dir
+		.. separator
+		.. get_require_path()
+		.. separator
+		.. "plugin"
+		.. separator
+		.. "?.lua"
 end
 
 local function init()
-	local plugin_dir = enable_sub_modules()
+	enable_sub_modules()
 
-	if plugin_dir == "" then
-		wezterm.emit("resurrect.init_error", "Plugin folder not found")
-		error("Could not find the plugin folder")
-	else
-		require("resurrect.state_manager").change_state_save_dir(plugin_dir .. separator .. "state" .. separator)
+	require("resurrect.state_manager").change_state_save_dir(
+		plugin_dir .. separator .. get_require_path() .. separator .. "state" .. separator
+	)
 
-		-- Export submodules
-		pub.workspace_state = require("resurrect.workspace_state")
-		pub.window_state = require("resurrect.window_state")
-		pub.tab_state = require("resurrect.tab_state")
-		pub.fuzzy_loader = require("resurrect.fuzzy_loader")
-		pub.state_manager = require("resurrect.state_manager")
-	end
+	-- Export submodules
+	pub.workspace_state = require("resurrect.workspace_state")
+	pub.window_state = require("resurrect.window_state")
+	pub.tab_state = require("resurrect.tab_state")
+	pub.fuzzy_loader = require("resurrect.fuzzy_loader")
+	pub.state_manager = require("resurrect.state_manager")
 end
 
 init()
