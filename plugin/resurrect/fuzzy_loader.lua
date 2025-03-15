@@ -137,6 +137,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 					for line in stdout:gmatch("[^\n]+") do
 						local epoch, file = line:match("(%d+)%s+(.+)")
 						if epoch and file then
+							wezterm.log_info("epoch:", epoch, " file:", file)
 							local filename, ext = file:match("^.*" .. utils.separator .. "(.+)%.(.*)$")
 							if filename ~= nil and filename ~= "" then
 								local date = os.date(opts.date_format, tonumber(epoch))
