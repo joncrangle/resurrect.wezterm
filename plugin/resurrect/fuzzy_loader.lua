@@ -91,7 +91,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 		local cmd
 		if utils.is_windows then
 			cmd = string.format(
-				"powershell -Command \"Get-ChildItem -Path %q -File | Where-Object { -not $_.Name.StartsWith('.') } | ForEach-Object { [math]::Floor([decimal](Get-Date $_.LastWriteTime -UFormat '%%s')), $_.FullName }\"",
+				"powershell -Command \"Get-ChildItem -Path %q -File | Where-Object { -not $_.Name.StartsWith('.') } | ForEach-Object { [string]::Format('{0} {1}', [math]::Floor([decimal](Get-Date $_.LastWriteTime -UFormat '%%s')), $_.FullName) }\"",
 				path
 			)
 			-- cmd = string.format(
