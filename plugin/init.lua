@@ -46,6 +46,7 @@ local function get_require_path()
 	}
 	for folder in ipairs(folders) do
 		path = plugin_dir .. folder
+		wezterm.log_info("Searching:", path)
 		if directory_exists(path) then
 			return path
 		end
@@ -88,7 +89,7 @@ local function enable_sub_modules()
 		plugin_dir = get_require_dev_path()
 	else
 		-- local plugin_base_dir = wezterm.plugin.list()[1].plugin_dir:gsub(separator .. "[^" .. separator .. "]*$", "")
-		plugin_dir = get_require_path(plugin_base_dir)
+		plugin_dir = get_require_path()
 		wezterm.log_info("Returned dir:", plugin_dir)
 	end
 	if plugin_dir ~= "" then
