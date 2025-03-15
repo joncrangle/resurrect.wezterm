@@ -4,7 +4,7 @@ local pub = {}
 
 local source_name = "file"
 local plugin_name = "resurrectsDswezterm"
-local dev = true
+local dev = false
 
 --- checks if the user is on Windows or MacOS and create globals
 local is_windows = wezterm.target_triple == "x86_64-pc-windows-msvc"
