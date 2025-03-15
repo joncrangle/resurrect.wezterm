@@ -34,6 +34,7 @@ end
 local function get_require_path()
 	local path
 	local plugin_dir = wezterm.plugin.list()[1].plugin_dir:gsub(separator .. "[^" .. separator .. "]*$", "")
+		.. separator
 	local folders = {
 		"httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDswezterm", -- sources with https
 		"httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDsweztermsZs",
@@ -44,7 +45,7 @@ local function get_require_path()
 		"httpsCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDswezterm", -- source with http
 		"httpsCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDsweztermsZs",
 	}
-	for folder in ipairs(folders) do
+	for _, folder in ipairs(folders) do
 		path = plugin_dir .. folder
 		wezterm.log_info("Searching:", path)
 		if directory_exists(path) then
