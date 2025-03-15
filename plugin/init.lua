@@ -35,6 +35,10 @@ end
 local function get_require_path(plugin_base_dir)
 	local path
 	local folders = {
+		"httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDswezterm", -- sources with https
+		"httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDsweztermsZs",
+		"httpsCssZssZsgithubsDscomsZschrisgvesZsresurrectsDswezterm", -- source with http
+		"httpsCssZssZsgithubsDscomsZschrisgvesZsresurrectsDsweztermsZs",
 		"httpssCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDswezterm", -- sources with https
 		"httpssCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDsweztermsZs",
 		"httpsCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDswezterm", -- source with http
