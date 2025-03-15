@@ -145,7 +145,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 				else
 					-- Parse the stdout and construct the file table
 					for line in stdout:gmatch("[^\n]+") do
-						weztern.log_info("line:", line)
+						wezterm.log_info("line:'", line, "'")
 						local epoch, file = line:match("%s*(%d+)%s+(.+)")
 						wezterm.log_info("epoch:", epoch, " file:", file)
 						if epoch and file then
