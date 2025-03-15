@@ -34,8 +34,13 @@ end
 --- @return string
 local function get_require_path(plugin_base_dir)
 	plugin_base_dir = plugin_base_dir .. separator
-	print("Base dir:", plugin_base_dir)
-	local path
+	wezterm.log_info("Base dir:", plugin_base_dir)
+	local path =
+		"/home/chris/.var/app/org.wezfurlong.wezterm/data/wezterm/plugins/httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDswezterm"
+	wezterm.log_info("First attempt :", path)
+	if directory_exists(path) then
+		return path
+	end
 	local folders = {
 		"httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDswezterm", -- sources with https
 		"httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDsweztermsZs",
@@ -49,7 +54,7 @@ local function get_require_path(plugin_base_dir)
 	-- check which variant is installed
 	for _, folder in ipairs(folders) do
 		path = plugin_base_dir .. folder
-		print("Searching:", folder)
+		wezterm.log_info("Searching:", folder)
 		if directory_exists(path) then
 			return path
 		end
@@ -71,11 +76,11 @@ local function enable_sub_modules()
 	else
 		local plugin_base_dir = wezterm.plugin.list()[1].plugin_dir:gsub(separator .. "[^" .. separator .. "]*$", "")
 		plugin_dir = get_require_path(plugin_base_dir)
-		print("Returned dir:", plugin_dir)
+		wezterm.log_info("Returned dir:", plugin_dir)
 	end
 	if plugin_dir ~= "" then
 		local path = plugin_dir .. separator .. "plugin" .. separator .. "?.lua"
-		print("Plugin path:", path)
+		wezterm.log_info("Plugin path:", path)
 		package.path = package.path .. ";" .. path
 	end
 	return plugin_dir
