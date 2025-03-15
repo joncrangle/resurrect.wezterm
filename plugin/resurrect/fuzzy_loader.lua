@@ -84,21 +84,82 @@ function pub.fuzzy_load(window, pane, callback, opts)
 		end
 	end
 
+	local function get_files_for_windows(type)
+		local path = folder .. type
+		-- Use a temporary VBS script for better performance
+		local temp_vbs = os.tmpname() .. ".vbs"
+		local temp_out = os.tmpname() .. ".txt"
+
+		local vbs_script = string.format(
+			[[
+            Set fso = CreateObject("Scripting.FileSystemObject")
+            Set folder = fso.GetFolder("%s")
+            Set outFile = fso.CreateTextFile("%s", True)
+            
+            For Each file in folder.Files
+                If Left(file.Name, 1) <> "." Then
+                    epoch = DateDiff("s", "01/01/1970 00:00:00", file.DateLastModified)
+                    outFile.WriteLine(epoch & " " & file.Path)
+                End If
+            Next
+            
+            outFile.Close
+        ]],
+			path:gsub("\\", "\\\\"),
+			temp_out:gsub("\\", "\\\\")
+		)
+
+		-- Write and execute the script invisibly
+		local handle = io.open(temp_vbs, "w")
+		if handle == nil then
+			wezterm.emit("resurrect.error", "Could not create temporary Windows process")
+			return ""
+		end
+
+		handle:write(vbs_script)
+		handle:close()
+
+		-- Execute without showing window
+		os.execute("wscript.exe /nologo " .. temp_vbs .. " >nul 2>&1")
+
+		-- Read results
+		handle = io.open(temp_out, "r")
+		if handle == nil then
+			wezterm.emit("resurrect.error", "Could not open temporary Windows process output")
+			return ""
+		end
+
+		local stdout = handle:read("*a")
+		if stdout == nil then
+			wezterm.emit("resurrect.error", "The Windows process had no output")
+			return ""
+		end
+
+		handle:close()
+
+		-- Clean up temp files
+		os.remove(temp_vbs)
+		os.remove(temp_out)
+
+		return stdout
+	end
+
 	local function execute(type)
 		-- Command-line recipe based on OS
 		local path = folder .. type
 		wezterm.log_info("Path:", path)
 		local cmd
-		if utils.is_windows then
-			cmd = string.format(
-				"powershell -Command \"Get-ChildItem -Path %q -File | Where-Object { -not $_.Name.StartsWith('.') } | ForEach-Object { [string]::Format('{0} {1}', [math]::Floor([decimal](Get-Date $_.LastWriteTime -UFormat '%%s')), $_.FullName) }\"",
-				path
-			)
-			-- cmd = string.format(
-			-- 	"powershell -Command \"Get-ChildItem -Path %q -File | Where-Object { -not $_.Name.StartsWith('.') } | ForEach-Object { [math]::Floor([decimal](Get-Date $_.LastWriteTime -UFormat '%%s')), $_.FullName }\"",
-			-- 	path
-			-- )
-		elseif utils.is_mac then
+		-- if utils.is_windows then
+		-- 	cmd = string.format(
+		-- 		"powershell -Command \"Get-ChildItem -Path %q -File | Where-Object { -not $_.Name.StartsWith('.') } | ForEach-Object { [string]::Format('{0} {1}', [math]::Floor([decimal](Get-Date $_.LastWriteTime -UFormat '%%s')), $_.FullName) }\"",
+		-- 		path
+		-- 	)
+		-- 	-- cmd = string.format(
+		-- 	-- 	"powershell -Command \"Get-ChildItem -Path %q -File | Where-Object { -not $_.Name.StartsWith('.') } | ForEach-Object { [math]::Floor([decimal](Get-Date $_.LastWriteTime -UFormat '%%s')), $_.FullName }\"",
+		-- 	-- 	path
+		-- 	-- )
+		-- elseif utils.is_mac then
+		if utils.is_mac then
 			cmd = 'stat -f "%m %N" "' .. path .. '"/*'
 		else -- last option: Linux-like
 			-- cmd = 'ls -l --time-style=+"%s" "' .. path .. "\" | awk '{print $6,$7,$9}'"
@@ -137,7 +198,12 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			if include then
 				local fmt = opts[string.format("fmt_%s", type)]
 
-				local stdout = execute(type)
+				local stdout = ""
+				if utils.is_windows then
+					stdout = get_files_for_windows(type)
+				else
+					local stdout = execute(type)
+				end
 				wezterm.log_info("blob:'", stdout, "'") --
 
 				if stdout == "" then
