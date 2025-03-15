@@ -94,14 +94,14 @@ function pub.fuzzy_load(window, pane, callback, opts)
 				.. path
 				.. '\' | ForEach-Object { "$($_.LastWriteTime.ToFileTimeUtc()) $($_.Name)" }"'
 		elseif utils.is_mac then
+			cmd = 'stat -f "%m %N" "' .. path .. '"/*'
+		else -- last option: Linux-like
+			-- cmd = 'ls -l --time-style=+"%s" "' .. path .. "\" | awk '{print $6,$7,$9}'"
+			-- cmd = "find $(realpath ) -maxdepth 1 -type f -not -name ".*" -printf "%T@ %p\n" | awk '{split($1, a, "."); print a[1], $2}'
 			cmd = string.format(
 				'find "$(realpath %q)" -maxdepth 1 -type f -not -name ".*" -printf "%%T@ %%p\\n" | awk \'{split($1, a, "."); print a[1], $2}\'',
 				path
 			)
-			-- cmd = "find $(realpath ) -maxdepth 1 -type f -not -name ".*" -printf "%T@ %p\n" | awk '{split($1, a, "."); print a[1], $2}'
-			-- cmd = 'stat -f "%m %N" "' .. path .. '"/*'
-		else -- last option: Linux-like
-			cmd = 'ls -l --time-style=+"%s" "' .. path .. "\" | awk '{print $6,$7,$9}'"
 		end
 
 		-- Execute the command and capture stdout
