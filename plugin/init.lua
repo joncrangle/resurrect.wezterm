@@ -1,4 +1,4 @@
-local wezterm = require("wezterm")
+local wezterm = require("wezterm") --[[@as Wezterm]] --- this type cast invokes the LSP module for Wezterm
 
 local pub = {}
 
@@ -12,6 +12,7 @@ local separator = is_windows and "\\" or "/"
 --- @return boolean
 local function directory_exists(path)
 	local success, result = pcall(wezterm.read_dir, plugin_dir .. path)
+	wezterm.log_info("path:", path, " success:", success, " result:", result)
 	return success and result
 end
 
