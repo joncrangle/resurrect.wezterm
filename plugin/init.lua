@@ -45,10 +45,13 @@ local function get_require_path()
 		"httpsCssZssZsgithubsDscomsZschrisgvesZsresurrectsDsweztermsZs",
 	}
 	for _, path in ipairs(paths) do
-		if directory_exists(path) then
-			return path
+		for _, plugin in ipairs(wezterm.plugin.list()) do
+			if plugin.component == path then
+				return plugin.plugin_dir
+			end
 		end
 	end
+	return ""
 	-- local path1 = "httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDswezterm"
 	-- local path2 = "httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDsweztermsZs"
 	-- -- local path1 = "httpssCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDswezterm"
