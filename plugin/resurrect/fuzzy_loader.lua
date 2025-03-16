@@ -250,7 +250,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			end
 		end
 
-		wezterm.log_info("DEBUG: files = " .. files)
+		wezterm.log_info("DEBUG: files = ", files)
 
 		-- Format and add files to state_files list
 		local types = { "workspace", "window", "tab" }
@@ -293,7 +293,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 		end
 	end
 
-	wezterm.log_info("DEBUG: state_files = " .. state_files)
+	wezterm.log_info("DEBUG: state_files = ", state_files)
 
 	-- Helper function to escape pattern special characters
 	if not utils.escape_pattern then
