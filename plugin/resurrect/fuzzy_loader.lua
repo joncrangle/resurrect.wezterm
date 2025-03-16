@@ -78,7 +78,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			-- macOS recursive find command for JSON files
 			cmd = 'find "' .. base_path .. '" -type f -name "*.json" -print0 | xargs -0 stat -f "%m %N"'
 		elseif utils.is_windows then
-			-- For Windows, use VBS for better performance
+			-- For Windows, use VBS for better performance and truly invisible execution
 			local temp_vbs = os.tmpname() .. ".vbs"
 			local temp_out = os.tmpname() .. ".txt"
 
@@ -88,7 +88,11 @@ function pub.fuzzy_load(window, pane, callback, opts)
                 Set outFile = fso.CreateTextFile("%s", True)
                 
                 Sub ProcessFolder(folderPath)
+                    On Error Resume Next
                     Set folder = fso.GetFolder(folderPath)
+                    If Err.Number <> 0 Then
+                        Exit Sub
+                    End If
                     
                     ' Process files in current folder
                     For Each file in folder.Files
@@ -111,18 +115,35 @@ function pub.fuzzy_load(window, pane, callback, opts)
 				base_path:gsub("\\", "\\\\")
 			)
 
-			-- Write and execute the script invisibly
+			-- Create a second VBS script that will run the first one invisibly
+			local launcher_vbs = os.tmpname() .. "_launcher.vbs"
+			local launcher_script = string.format(
+				[[
+                Set WshShell = CreateObject("WScript.Shell")
+                WshShell.Run "wscript.exe //nologo %s", 0, True
+            ]],
+				temp_vbs
+			)
+
+			-- Write the scripts
 			local handle = io.open(temp_vbs, "w")
 			if handle == nil then
 				wezterm.emit("resurrect.error", "Could not create temporary Windows process")
 				return ""
 			end
-
 			handle:write(vbs_script)
 			handle:close()
 
-			-- Execute without showing window
-			os.execute("wscript.exe /nologo " .. temp_vbs .. " >nul 2>&1")
+			handle = io.open(launcher_vbs, "w")
+			if handle == nil then
+				wezterm.emit("resurrect.error", "Could not create launcher script")
+				return ""
+			end
+			handle:write(launcher_script)
+			handle:close()
+
+			-- Execute using launcher (completely hidden)
+			os.execute("wscript.exe //nologo " .. launcher_vbs)
 
 			-- Read results
 			handle = io.open(temp_out, "r")
@@ -141,6 +162,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 
 			-- Clean up temp files
 			os.remove(temp_vbs)
+			os.remove(launcher_vbs)
 			os.remove(temp_out)
 
 			return stdout
@@ -192,22 +214,42 @@ function pub.fuzzy_load(window, pane, callback, opts)
 						local epoch, file = line:match("%s*(%d+)%s+(.+)")
 						if epoch and file then
 							-- Extract the filename relative to the type folder
-							local relative_path = file:sub(#base_path + 2) -- +2 for the separator
+							local relative_path
 
-							-- Keep the full filename with extension
-							local filename = relative_path
+							-- Fix for the missing first character issue
+							if utils.is_mac then
+								relative_path = file:sub(#base_path + 2) -- +2 for the separator
+							else
+								-- For Windows and Linux, ensure we don't lose the first character
+								-- by using string.find to locate the exact position after the base_path
+								local path_pattern = utils.escape_pattern(base_path)
+								local _, end_pos = file:find(path_pattern)
 
-							-- Calculate date
-							local date = os.date(opts.date_format, tonumber(epoch))
-							max_length = math.max(max_length, #filename)
+								if end_pos then
+									-- Skip the separator character
+									relative_path = file:sub(end_pos + 2)
+								else
+									-- Fallback if pattern match fails
+									relative_path = file:match("[^/\\]+%.json$")
+								end
+							end
 
-							table.insert(files, {
-								id = type .. utils.separator .. relative_path,
-								filename = filename,
-								date = date,
-								fmt = fmt,
-								type = type,
-							})
+							if relative_path then
+								-- Keep the full filename with extension
+								local filename = relative_path
+
+								-- Calculate date
+								local date = os.date(opts.date_format, tonumber(epoch))
+								max_length = math.max(max_length, #filename)
+
+								table.insert(files, {
+									id = type .. utils.separator .. relative_path,
+									filename = filename,
+									date = date,
+									fmt = fmt,
+									type = type,
+								})
+							end
 						end
 					end
 				end
@@ -244,6 +286,13 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			end
 
 			table.insert(state_files, { id = file.id, label = label })
+		end
+	end
+
+	-- Helper function to escape pattern special characters
+	if not utils.escape_pattern then
+		utils.escape_pattern = function(str)
+			return str:gsub("([%(%)%.%%%+%-%*%?%[%]%^%$])", "%%%1")
 		end
 	end
 
