@@ -209,44 +209,44 @@ function pub.fuzzy_load(window, pane, callback, opts)
 				if epoch and file and type and type == type then
 					-- Collect all the included files recursively for each type
 					local fmt = opts[string.format("fmt_%s", type)]
-					local base_path = folder .. utils.separator .. type
-					-- Extract the filename relative to the type folder
-					local relative_path
+					-- local base_path = folder .. utils.separator .. type
+					-- -- Extract the filename relative to the type folder
+					-- local relative_path
+					--
+					-- -- Fix for the missing first character issue
+					-- if utils.is_mac then
+					-- 	relative_path = file:sub(#base_path + 2) -- +2 for the separator
+					-- else
+					-- 	-- For Windows and Linux, ensure we don't lose the first character
+					-- 	-- by using string.find to locate the exact position after the base_path
+					-- 	local path_pattern = utils.escape_pattern(base_path)
+					-- 	local _, end_pos = file:find(path_pattern)
+					--
+					-- 	if end_pos then
+					-- 		-- Skip the separator character
+					-- 		relative_path = file:sub(end_pos + 2)
+					-- 	else
+					-- 		-- Fallback if pattern match fails
+					-- 		relative_path = file:match("[^/\\]+%.json$")
+					-- 	end
+					-- end
+					--
+					-- if relative_path then
+					-- 	-- Keep the full filename with extension
+					-- 	local filename = relative_path
+					--
+					-- 	-- Calculate date
+					-- 	local date = os.date(opts.date_format, tonumber(epoch))
+					max_length = math.max(max_length, #file)
 
-					-- Fix for the missing first character issue
-					if utils.is_mac then
-						relative_path = file:sub(#base_path + 2) -- +2 for the separator
-					else
-						-- For Windows and Linux, ensure we don't lose the first character
-						-- by using string.find to locate the exact position after the base_path
-						local path_pattern = utils.escape_pattern(base_path)
-						local _, end_pos = file:find(path_pattern)
-
-						if end_pos then
-							-- Skip the separator character
-							relative_path = file:sub(end_pos + 2)
-						else
-							-- Fallback if pattern match fails
-							relative_path = file:match("[^/\\]+%.json$")
-						end
-					end
-
-					if relative_path then
-						-- Keep the full filename with extension
-						local filename = relative_path
-
-						-- Calculate date
-						local date = os.date(opts.date_format, tonumber(epoch))
-						max_length = math.max(max_length, #filename)
-
-						table.insert(files, {
-							id = type .. utils.separator .. relative_path,
-							filename = filename,
-							date = date,
-							fmt = fmt,
-							type = type,
-						})
-					end
+					table.insert(files, {
+						id = type .. utils.separator .. file,
+						filename = file,
+						epoch = epoch,
+						fmt = fmt,
+						type = type,
+					})
+					-- end
 				end
 			end
 		end
@@ -274,10 +274,11 @@ function pub.fuzzy_load(window, pane, callback, opts)
 								label = file.filename .. padding
 							end
 
+							local date = os.date(opts.date_format, tonumber(file.epoch))
 							if opts.fmt_date then
-								label = label .. " " .. opts.fmt_date(file.date)
+								label = label .. " " .. opts.fmt_date(date)
 							else
-								label = label .. " " .. file.date
+								label = label .. " " .. date
 							end
 						else
 							if file.fmt then
