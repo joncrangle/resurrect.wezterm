@@ -208,6 +208,8 @@ function pub.fuzzy_load(window, pane, callback, opts)
 				-- Get recursive JSON files
 				local stdout = find_json_files_recursive(base_path)
 
+				wezterm.log_info("blob:", stdout)
+
 				if stdout ~= "" then
 					-- Parse the stdout and construct the file table
 					for line in stdout:gmatch("[^\n]+") do
