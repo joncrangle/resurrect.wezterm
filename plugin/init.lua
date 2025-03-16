@@ -8,27 +8,6 @@ local plugin_dir
 local is_windows = wezterm.target_triple == "x86_64-pc-windows-msvc"
 local separator = is_windows and "\\" or "/"
 
---- Checks if the plugin directory exists
---- @return boolean
-local function directory_exists(path)
-	local full_path = plugin_dir .. separator .. path
-	wezterm.log_info("Checking path:", full_path)
-
-	-- Try to open the directory as a file first to check existence
-	local success, err = pcall(function()
-		local stat = wezterm.run_child_process({ "ls", "-d", full_path })
-		return stat.status == 0
-	end)
-
-	wezterm.log_info("Check result for:", full_path, " success:", success, " err:", err)
-	return success and err
-end
--- local function directory_exists(path)
--- 	local success, result = pcall(wezterm.read_dir, plugin_dir .. separator .. path .. separator)
--- 	wezterm.log_info("plugin_dir:", plugin_dir, " path:", path, " success:", success, " result:", result)
--- 	return success and result
--- end
-
 --- Returns the name of the package, used when requiring modules
 --- @return string
 local function get_require_path()
@@ -52,11 +31,6 @@ local function get_require_path()
 		end
 	end
 	return ""
-	-- local path1 = "httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDswezterm"
-	-- local path2 = "httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDsweztermsZs"
-	-- -- local path1 = "httpssCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDswezterm"
-	-- -- local path2 = "httpssCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDsweztermsZs"
-	-- return directory_exists(path2) and path2 or path1
 end
 
 --- adds the wezterm plugin directory to the lua path
