@@ -18,11 +18,28 @@ end
 --- Returns the name of the package, used when requiring modules
 --- @return string
 local function get_require_path()
-	local path1 = "httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDswezterm"
-	local path2 = "httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDsweztermsZs"
-	-- local path1 = "httpssCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDswezterm"
-	-- local path2 = "httpssCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDsweztermsZs"
-	return directory_exists(path2) and path2 or path1
+	local paths = {
+		-- MLFlexer repo
+		"httpssCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDswezterm",
+		"httpssCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDsweztermsZs",
+		"httpsCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDswezterm",
+		"httpsCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDsweztermsZs",
+		-- chrisgve repo
+		"httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDswezterm",
+		"httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDsweztermsZs",
+		"httpsCssZssZsgithubsDscomsZschrisgvesZsresurrectsDswezterm",
+		"httpsCssZssZsgithubsDscomsZschrisgvesZsresurrectsDsweztermsZs",
+	}
+	for _, path in ipairs(paths) do
+		if directory_exists(path) then
+			return path
+		end
+	end
+	-- local path1 = "httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDswezterm"
+	-- local path2 = "httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDsweztermsZs"
+	-- -- local path1 = "httpssCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDswezterm"
+	-- -- local path2 = "httpssCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDsweztermsZs"
+	-- return directory_exists(path2) and path2 or path1
 end
 
 --- adds the wezterm plugin directory to the lua path
