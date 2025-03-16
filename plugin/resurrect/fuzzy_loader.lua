@@ -255,7 +255,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 		-- Format and add files to state_files list
 		local types = { "workspace", "window", "tab" }
 		for _, type in ipairs(types) do
-			local include = not opts[string.format("ignore_%s", type)]
+			local include = not opts[string.format("ignore_%ss", type)]
 			if include then
 				for _, file in ipairs(files) do
 					if file.type == type then
