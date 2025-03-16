@@ -70,266 +70,191 @@ function pub.fuzzy_load(window, pane, callback, opts)
 
 	local folder = require("resurrect.state_manager").save_state_dir
 
-	-- Helper function to escape pattern special characters
-	if not utils.escape_pattern then
-		utils.escape_pattern = function(str)
-			return str:gsub("([%(%)%.%%%+%-%*%?%[%]%^%$])", "%%%1")
-		end
-	end
+	-- Optimized recursive JSON file finder for all platforms
+	local function find_json_files_recursive(base_path)
+		local cmd
 
-	-- Find all JSON files for all types in their respective folders
-	local function find_all_json_files()
-		local all_files = {
-			workspace = {},
-			window = {},
-			tab = {},
-		}
+		if utils.is_mac then
+			-- macOS recursive find command for JSON files
+			cmd = 'find "' .. base_path .. '" -type f -name "*.json" -print0 | xargs -0 stat -f "%m %N"'
+		elseif utils.is_windows then
+			-- For Windows, use VBS for better performance and truly invisible execution
+			local temp_vbs = os.tmpname() .. ".vbs"
+			local temp_out = os.tmpname() .. ".txt"
 
-		-- Process each type folder separately but in one function call
-		local types = { "workspace", "window", "tab" }
-		for _, type in ipairs(types) do
-			local base_path = folder .. utils.separator .. type
-			local cmd
-
-			if utils.is_mac then
-				-- macOS recursive find command for JSON files
-				cmd = 'find "' .. base_path .. '" -type f -name "*.json" -print0 | xargs -0 stat -f "%m %N"'
-
-				-- Execute the command and capture stdout
-				local handle = io.popen(cmd)
-				if handle == nil then
-					wezterm.log_info("DEBUG: Could not open process for " .. type)
-					goto continue
-				end
-
-				local stdout = handle:read("*a")
-				handle:close()
-
-				if stdout and stdout ~= "" then
-					-- Parse the stdout
-					for line in stdout:gmatch("[^\n]+") do
-						local epoch, file = line:match("%s*(%d+)%s+(.+)")
-						if epoch and file then
-							-- Extract the filename relative to the type folder
-							local path_pattern = utils.escape_pattern(base_path)
-							local _, end_pos = file:find(path_pattern)
-
-							local relative_path
-							if end_pos then
-								-- Skip the separator character
-								relative_path = file:sub(end_pos + 2)
-							else
-								-- Fallback if pattern match fails
-								relative_path = file:match("[^/\\]+%.json$")
-							end
-
-							if relative_path then
-								table.insert(all_files[type], {
-									relative_path = relative_path,
-									epoch = tonumber(epoch),
-								})
-							end
-						end
-					end
-				end
-			elseif utils.is_windows then
-				-- For Windows, use VBS for better performance
-				local temp_vbs = os.tmpname() .. ".vbs"
-				local temp_out = os.tmpname() .. ".txt"
-
-				local vbs_script = string.format(
-					[[
-                    Set fso = CreateObject("Scripting.FileSystemObject")
-                    Set outFile = fso.CreateTextFile("%s", True)
+			local vbs_script = string.format(
+				[[
+                Set fso = CreateObject("Scripting.FileSystemObject")
+                Set outFile = fso.CreateTextFile("%s", True)
+                
+                Sub ProcessFolder(folderPath)
+                    On Error Resume Next
+                    Set folder = fso.GetFolder(folderPath)
+                    If Err.Number <> 0 Then
+                        Exit Sub
+                    End If
                     
-                    Sub ProcessFolder(folderPath)
-                        On Error Resume Next
-                        Set folder = fso.GetFolder(folderPath)
-                        If Err.Number <> 0 Then
-                            Exit Sub
+                    ' Process files in current folder
+                    For Each file in folder.Files
+                        If LCase(fso.GetExtensionName(file.Name)) = "json" Then
+                            epoch = DateDiff("s", "01/01/1970 00:00:00", file.DateLastModified)
+                            outFile.WriteLine(epoch & " " & file.Path)
                         End If
-                        
-                        ' Process files in current folder
-                        For Each file in folder.Files
-                            If LCase(fso.GetExtensionName(file.Name)) = "json" Then
-                                epoch = DateDiff("s", "01/01/1970 00:00:00", file.DateLastModified)
-                                outFile.WriteLine(epoch & " " & file.Path)
-                            End If
-                        Next
-                        
-                        ' Process subfolders recursively
-                        For Each subFolder in folder.SubFolders
-                            ProcessFolder(subFolder.Path)
-                        Next
-                    End Sub
+                    Next
                     
-                    ProcessFolder("%s")
-                    outFile.Close
-                ]],
-					temp_out:gsub("\\", "\\\\"),
-					base_path:gsub("\\", "\\\\")
-				)
+                    ' Process subfolders recursively
+                    For Each subFolder in folder.SubFolders
+                        ProcessFolder(subFolder.Path)
+                    Next
+                End Sub
+                
+                ProcessFolder("%s")
+                outFile.Close
+            ]],
+				temp_out:gsub("\\", "\\\\"),
+				base_path:gsub("\\", "\\\\")
+			)
 
-				-- Create a second VBS script that will run the first one invisibly
-				local launcher_vbs = os.tmpname() .. "_launcher.vbs"
-				local launcher_script = string.format(
-					[[
-                    Set WshShell = CreateObject("WScript.Shell")
-                    WshShell.Run "wscript.exe //nologo %s", 0, True
-                ]],
-					temp_vbs
-				)
+			-- Create a second VBS script that will run the first one invisibly
+			local launcher_vbs = os.tmpname() .. "_launcher.vbs"
+			local launcher_script = string.format(
+				[[
+                Set WshShell = CreateObject("WScript.Shell")
+                WshShell.Run "wscript.exe //nologo %s", 0, True
+            ]],
+				temp_vbs
+			)
 
-				-- Write the scripts
-				local handle = io.open(temp_vbs, "w")
-				if handle == nil then
-					wezterm.log_info("DEBUG: Could not create temporary Windows process for " .. type)
-					goto continue
-				end
-				handle:write(vbs_script)
-				handle:close()
+			-- Write the scripts
+			local handle = io.open(temp_vbs, "w")
+			if handle == nil then
+				wezterm.emit("resurrect.error", "Could not create temporary Windows process")
+				return ""
+			end
+			handle:write(vbs_script)
+			handle:close()
 
-				handle = io.open(launcher_vbs, "w")
-				if handle == nil then
-					wezterm.log_info("DEBUG: Could not create launcher script for " .. type)
-					goto continue
-				end
-				handle:write(launcher_script)
-				handle:close()
+			handle = io.open(launcher_vbs, "w")
+			if handle == nil then
+				wezterm.emit("resurrect.error", "Could not create launcher script")
+				return ""
+			end
+			handle:write(launcher_script)
+			handle:close()
 
-				-- Execute using launcher (completely hidden)
-				os.execute("wscript.exe //nologo " .. launcher_vbs)
+			-- Execute using launcher (completely hidden)
+			os.execute("wscript.exe //nologo " .. launcher_vbs)
 
-				-- Read results
-				handle = io.open(temp_out, "r")
-				if handle == nil then
-					wezterm.log_info("DEBUG: Could not open temporary Windows process output for " .. type)
-					goto continue
-				end
-
-				local stdout = handle:read("*a")
-				handle:close()
-
-				-- Clean up temp files
-				os.remove(temp_vbs)
-				os.remove(launcher_vbs)
-				os.remove(temp_out)
-
-				if stdout and stdout ~= "" then
-					-- Parse the stdout
-					for line in stdout:gmatch("[^\n]+") do
-						local epoch, file = line:match("%s*(%d+)%s+(.+)")
-						if epoch and file then
-							-- Extract the filename relative to the type folder
-							local path_pattern = utils.escape_pattern(base_path)
-							local _, end_pos = file:find(path_pattern)
-
-							local relative_path
-							if end_pos then
-								-- Skip the separator character
-								relative_path = file:sub(end_pos + 2)
-							else
-								-- Fallback if pattern match fails
-								relative_path = file:match("[^/\\]+%.json$")
-							end
-
-							if relative_path then
-								table.insert(all_files[type], {
-									relative_path = relative_path,
-									epoch = tonumber(epoch),
-								})
-							end
-						end
-					end
-				end
-			else
-				-- Linux optimized recursive find command for JSON files
-				cmd = string.format(
-					'find "$(realpath %q)" -type f -name "*.json" -printf "%%T@ %%p\\n" | awk \'{split($1, a, "."); print a[1], $2}\'',
-					base_path
-				)
-
-				-- Execute the command and capture stdout
-				local handle = io.popen(cmd)
-				if handle == nil then
-					wezterm.log_info("DEBUG: Could not open process for " .. type)
-					goto continue
-				end
-
-				local stdout = handle:read("*a")
-				handle:close()
-
-				if stdout and stdout ~= "" then
-					-- Parse the stdout
-					for line in stdout:gmatch("[^\n]+") do
-						local epoch, file = line:match("%s*(%d+)%s+(.+)")
-						if epoch and file then
-							-- Extract the filename relative to the type folder
-							local path_pattern = utils.escape_pattern(base_path)
-							local _, end_pos = file:find(path_pattern)
-
-							local relative_path
-							if end_pos then
-								-- Skip the separator character
-								relative_path = file:sub(end_pos + 2)
-							else
-								-- Fallback if pattern match fails
-								relative_path = file:match("[^/\\]+%.json$")
-							end
-
-							if relative_path then
-								table.insert(all_files[type], {
-									relative_path = relative_path,
-									epoch = tonumber(epoch),
-								})
-							end
-						end
-					end
-				end
+			-- Read results
+			handle = io.open(temp_out, "r")
+			if handle == nil then
+				wezterm.emit("resurrect.error", "Could not open temporary Windows process output")
+				return ""
 			end
 
-			::continue::
+			local stdout = handle:read("*a")
+			if stdout == nil then
+				wezterm.emit("resurrect.error", "The Windows process had no output")
+				return ""
+			end
+
+			handle:close()
+
+			-- Clean up temp files
+			os.remove(temp_vbs)
+			os.remove(launcher_vbs)
+			os.remove(temp_out)
+
+			return stdout
+		else
+			-- Linux optimized recursive find command for JSON files
+			cmd = string.format(
+				'find "$(realpath %q)" -type f -name "*.json" -printf "%%T@ %%p\\n" | awk \'{split($1, a, "."); print a[1], $2}\'',
+				base_path
+			)
 		end
 
-		return all_files
+		if not utils.is_windows then
+			-- Execute the command and capture stdout for non-Windows
+			local handle = io.popen(cmd)
+			if handle == nil then
+				wezterm.emit("resurrect.error", "Could not open process: " .. cmd)
+				return ""
+			end
+
+			local stdout = handle:read("*a")
+			if stdout == nil then
+				wezterm.emit("resurrect.error", "No output when running: " .. cmd)
+				return ""
+			end
+
+			handle:close()
+			return stdout
+		end
 	end
 
-	local function process_files()
-		-- Get all files in one go
-		local all_files = find_all_json_files()
-		wezterm.log_info("DEBUG: all_files = " .. wezterm.json_encode(all_files))
-
+	local function insert_choices()
 		local files = {}
 		local max_length = 0
 
-		-- Process files for each type in order
+		-- Collect all the included files recursively for each type
 		local types = { "workspace", "window", "tab" }
 		for _, type in ipairs(types) do
 			local include = not opts[string.format("ignore_%ss", type)]
-			if include and all_files[type] then
+			if include then
 				local fmt = opts[string.format("fmt_%s", type)]
+				local base_path = folder .. utils.separator .. type
 
-				for _, file_data in ipairs(all_files[type]) do
-					-- Extract filename without extension for label formatting
-					local filename = file_data.relative_path
-					local display_name = filename:gsub("%.json$", "")
+				-- Get recursive JSON files
+				local stdout = find_json_files_recursive(base_path)
 
-					-- Store the maximum length for padding calculations
-					max_length = math.max(max_length, #display_name)
+				if stdout ~= "" then
+					-- Parse the stdout and construct the file table
+					for line in stdout:gmatch("[^\n]+") do
+						local epoch, file = line:match("%s*(%d+)%s+(.+)")
+						if epoch and file then
+							-- Extract the filename relative to the type folder
+							local relative_path
 
-					table.insert(files, {
-						id = type .. utils.separator .. filename,
-						filename = display_name, -- Store without extension for display
-						raw_filename = filename, -- Store original for ID
-						epoch = file_data.epoch,
-						fmt = fmt,
-						type = type,
-					})
+							-- Fix for the missing first character issue
+							if utils.is_mac then
+								relative_path = file:sub(#base_path + 2) -- +2 for the separator
+							else
+								-- For Windows and Linux, ensure we don't lose the first character
+								-- by using string.find to locate the exact position after the base_path
+								local path_pattern = utils.escape_pattern(base_path)
+								local _, end_pos = file:find(path_pattern)
+
+								if end_pos then
+									-- Skip the separator character
+									relative_path = file:sub(end_pos + 2)
+								else
+									-- Fallback if pattern match fails
+									relative_path = file:match("[^/\\]+%.json$")
+								end
+							end
+
+							if relative_path then
+								-- Keep the full filename with extension
+								local filename = relative_path
+
+								-- Calculate date
+								local date = os.date(opts.date_format, tonumber(epoch))
+								max_length = math.max(max_length, #filename)
+
+								table.insert(files, {
+									id = type .. utils.separator .. relative_path,
+									filename = filename,
+									date = date,
+									fmt = fmt,
+									type = type,
+								})
+							end
+						end
+					end
 				end
 			end
 		end
-
-		wezterm.log_info("DEBUG: files = " .. wezterm.json_encode(files))
 
 		-- Format and add files to state_files list
 		for _, file in ipairs(files) do
@@ -347,12 +272,10 @@ function pub.fuzzy_load(window, pane, callback, opts)
 					label = file.filename .. padding
 				end
 
-				-- Only format the date when we need to display it
-				local date = os.date(opts.date_format, file.epoch)
 				if opts.fmt_date then
-					label = label .. " " .. opts.fmt_date(date)
+					label = label .. " " .. opts.fmt_date(file.date)
 				else
-					label = label .. " " .. date
+					label = label .. " " .. file.date
 				end
 			else
 				if file.fmt then
@@ -364,12 +287,17 @@ function pub.fuzzy_load(window, pane, callback, opts)
 
 			table.insert(state_files, { id = file.id, label = label })
 		end
-
-		wezterm.log_info("DEBUG: state_files = " .. wezterm.json_encode(state_files))
 	end
 
-	-- Process all files
-	process_files()
+	-- Helper function to escape pattern special characters
+	if not utils.escape_pattern then
+		utils.escape_pattern = function(str)
+			return str:gsub("([%(%)%.%%%+%-%*%?%[%]%^%$])", "%%%1")
+		end
+	end
+
+	-- Always use the recursive search function
+	insert_choices()
 
 	window:perform_action(
 		wezterm.action.InputSelector({
