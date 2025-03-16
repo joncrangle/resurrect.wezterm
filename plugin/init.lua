@@ -62,15 +62,7 @@ end
 --- adds the wezterm plugin directory to the lua path
 local function enable_sub_modules()
 	plugin_dir = wezterm.plugin.list()[1].plugin_dir:gsub(separator .. "[^" .. separator .. "]*$", "")
-	package.path = package.path
-		.. ";"
-		.. plugin_dir
-		.. separator
-		.. get_require_path()
-		.. separator
-		.. "plugin"
-		.. separator
-		.. "?.lua"
+	package.path = package.path .. ";" .. get_require_path() .. separator .. "plugin" .. separator .. "?.lua"
 end
 
 local function init()
