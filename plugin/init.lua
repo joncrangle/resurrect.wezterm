@@ -68,9 +68,7 @@ end
 local function init()
 	enable_sub_modules()
 
-	require("resurrect.state_manager").change_state_save_dir(
-		plugin_dir .. separator .. get_require_path() .. separator .. "state" .. separator
-	)
+	require("resurrect.state_manager").change_state_save_dir(get_require_path() .. separator .. "state" .. separator)
 
 	-- Export submodules
 	pub.workspace_state = require("resurrect.workspace_state")
