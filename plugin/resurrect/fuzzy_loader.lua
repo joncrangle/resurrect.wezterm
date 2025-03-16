@@ -256,6 +256,8 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			end
 		end
 
+		wezterm.log_info("Files:", files)
+
 		-- Format and add files to state_files list
 		for _, file in ipairs(files) do
 			local label = ""
@@ -298,6 +300,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 
 	-- Always use the recursive search function
 	insert_choices()
+	wezterm.log_info("State_files:", state_files)
 
 	window:perform_action(
 		wezterm.action.InputSelector({
