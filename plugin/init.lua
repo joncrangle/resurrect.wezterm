@@ -11,7 +11,7 @@ local separator = is_windows and "\\" or "/"
 --- Checks if the plugin directory exists
 --- @return boolean
 local function directory_exists(path)
-	local success, result = pcall(wezterm.read_dir, plugin_dir .. path)
+	local success, result = pcall(wezterm.read_dir, plugin_dir .. separator .. path)
 	wezterm.log_info("plugin_dir:", plugin_dir, " path:", path, " success:", success, " result:", result)
 	return success and result
 end
