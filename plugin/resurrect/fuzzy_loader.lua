@@ -70,8 +70,18 @@ function pub.fuzzy_load(window, pane, callback, opts)
 
 	local folder = require("resurrect.state_manager").save_state_dir
 
+	-- Helper function to escape pattern special characters
+	if not utils.escape_pattern then
+		utils.escape_pattern = function(str)
+			return str:gsub("([%(%)%.%%%+%-%*%?%[%]%^%$])", "%%%1")
+		end
+	end
+
 	-- Optimized recursive JSON file finder for all platforms
-	local function find_json_files_recursive(base_path)
+	-- Collects files from the base folder recursively in one go
+	local function find_all_json_files()
+		local all_files = {}
+		local base_path = folder -- Use the base folder directly
 		local cmd
 
 		if utils.is_mac then
@@ -129,7 +139,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			local handle = io.open(temp_vbs, "w")
 			if handle == nil then
 				wezterm.emit("resurrect.error", "Could not create temporary Windows process")
-				return ""
+				return all_files
 			end
 			handle:write(vbs_script)
 			handle:close()
@@ -137,7 +147,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			handle = io.open(launcher_vbs, "w")
 			if handle == nil then
 				wezterm.emit("resurrect.error", "Could not create launcher script")
-				return ""
+				return all_files
 			end
 			handle:write(launcher_script)
 			handle:close()
@@ -149,15 +159,10 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			handle = io.open(temp_out, "r")
 			if handle == nil then
 				wezterm.emit("resurrect.error", "Could not open temporary Windows process output")
-				return ""
+				return all_files
 			end
 
 			local stdout = handle:read("*a")
-			if stdout == nil then
-				wezterm.emit("resurrect.error", "The Windows process had no output")
-				return ""
-			end
-
 			handle:close()
 
 			-- Clean up temp files
@@ -165,92 +170,80 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			os.remove(launcher_vbs)
 			os.remove(temp_out)
 
-			return stdout
+			if stdout and stdout ~= "" then
+				-- Parse the stdout and construct the file table
+				for line in stdout:gmatch("[^\n]+") do
+					local epoch, file = line:match("%s*(%d+)%s+(.+)")
+					if epoch and file then
+						-- Determine the type from the path (workspace, window, or tab)
+						for _, type in ipairs({ "workspace", "window", "tab" }) do
+							local type_path = base_path .. utils.separator .. type
+							local type_pattern = utils.escape_pattern(type_path)
+
+							if file:find(type_pattern) then
+								-- Extract the filename relative to the type folder
+								local _, end_pos = file:find(type_pattern)
+								local relative_path = file:sub(end_pos + 2) -- +2 to skip separator
+
+								if not all_files[type] then
+									all_files[type] = {}
+								end
+
+								table.insert(all_files[type], {
+									relative_path = relative_path,
+									epoch = tonumber(epoch),
+								})
+
+								break
+							end
+						end
+					end
+				end
+			end
+
+			return all_files
 		else
 			-- Linux optimized recursive find command for JSON files
 			cmd = string.format(
 				'find "$(realpath %q)" -type f -name "*.json" -printf "%%T@ %%p\\n" | awk \'{split($1, a, "."); print a[1], $2}\'',
 				base_path
 			)
-		end
 
-		if not utils.is_windows then
 			-- Execute the command and capture stdout for non-Windows
 			local handle = io.popen(cmd)
 			if handle == nil then
 				wezterm.emit("resurrect.error", "Could not open process: " .. cmd)
-				return ""
+				return all_files
 			end
 
 			local stdout = handle:read("*a")
-			if stdout == nil then
-				wezterm.emit("resurrect.error", "No output when running: " .. cmd)
-				return ""
-			end
-
 			handle:close()
-			return stdout
-		end
-	end
 
-	local function insert_choices()
-		local files = {}
-		local max_length = 0
+			if stdout and stdout ~= "" then
+				-- Parse the stdout and construct the file table
+				for line in stdout:gmatch("[^\n]+") do
+					local epoch, file = line:match("%s*(%d+)%s+(.+)")
+					if epoch and file then
+						-- Determine the type from the path (workspace, window, or tab)
+						for _, type in ipairs({ "workspace", "window", "tab" }) do
+							local type_path = base_path .. utils.separator .. type
+							local type_pattern = utils.escape_pattern(type_path)
 
-		-- Collect all the included files recursively for each type
-		local types = { "workspace", "window", "tab" }
-		for _, type in ipairs(types) do
-			local include = not opts[string.format("ignore_%ss", type)]
-			if include then
-				local fmt = opts[string.format("fmt_%s", type)]
-				local base_path = folder .. utils.separator .. type
+							if file:find(type_pattern) then
+								-- Extract the filename relative to the type folder
+								local _, end_pos = file:find(type_pattern)
+								local relative_path = file:sub(end_pos + 2) -- +2 to skip separator
 
-				-- Get recursive JSON files
-				local stdout = find_json_files_recursive(base_path)
-
-				wezterm.log_info("blob:", stdout)
-
-				if stdout ~= "" then
-					-- Parse the stdout and construct the file table
-					for line in stdout:gmatch("[^\n]+") do
-						local epoch, file = line:match("%s*(%d+)%s+(.+)")
-						if epoch and file then
-							-- Extract the filename relative to the type folder
-							local relative_path
-
-							-- Fix for the missing first character issue
-							if utils.is_mac then
-								relative_path = file:sub(#base_path + 2) -- +2 for the separator
-							else
-								-- For Windows and Linux, ensure we don't lose the first character
-								-- by using string.find to locate the exact position after the base_path
-								local path_pattern = utils.escape_pattern(base_path)
-								local _, end_pos = file:find(path_pattern)
-
-								if end_pos then
-									-- Skip the separator character
-									relative_path = file:sub(end_pos + 2)
-								else
-									-- Fallback if pattern match fails
-									relative_path = file:match("[^/\\]+%.json$")
+								if not all_files[type] then
+									all_files[type] = {}
 								end
-							end
 
-							if relative_path then
-								-- Keep the full filename with extension
-								local filename = relative_path
-
-								-- Calculate date
-								local date = os.date(opts.date_format, tonumber(epoch))
-								max_length = math.max(max_length, #filename)
-
-								table.insert(files, {
-									id = type .. utils.separator .. relative_path,
-									filename = filename,
-									date = date,
-									fmt = fmt,
-									type = type,
+								table.insert(all_files[type], {
+									relative_path = relative_path,
+									epoch = tonumber(epoch),
 								})
+
+								break
 							end
 						end
 					end
@@ -258,7 +251,45 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			end
 		end
 
-		wezterm.log_info("Files:", files)
+		return all_files
+	end
+
+	local function process_files()
+		-- Get all files in one go
+		local all_files = find_all_json_files()
+		wezterm.log_info("DEBUG: all_files = " .. wezterm.json_encode(all_files))
+
+		local files = {}
+		local max_length = 0
+
+		-- Process files for each type in order
+		local types = { "workspace", "window", "tab" }
+		for _, type in ipairs(types) do
+			local include = not opts[string.format("ignore_%ss", type)]
+			if include and all_files[type] then
+				local fmt = opts[string.format("fmt_%s", type)]
+
+				for _, file_data in ipairs(all_files[type]) do
+					-- Extract filename without extension for label formatting
+					local filename = file_data.relative_path
+					local display_name = filename:gsub("%.json$", "")
+
+					-- Store the maximum length for padding calculations
+					max_length = math.max(max_length, #display_name)
+
+					table.insert(files, {
+						id = type .. utils.separator .. filename,
+						filename = display_name, -- Store without extension for display
+						raw_filename = filename, -- Store original for ID
+						epoch = file_data.epoch,
+						fmt = fmt,
+						type = type,
+					})
+				end
+			end
+		end
+
+		wezterm.log_info("DEBUG: files = " .. wezterm.json_encode(files))
 
 		-- Format and add files to state_files list
 		for _, file in ipairs(files) do
@@ -276,10 +307,12 @@ function pub.fuzzy_load(window, pane, callback, opts)
 					label = file.filename .. padding
 				end
 
+				-- Only format the date when we need to display it
+				local date = os.date(opts.date_format, file.epoch)
 				if opts.fmt_date then
-					label = label .. " " .. opts.fmt_date(file.date)
+					label = label .. " " .. opts.fmt_date(date)
 				else
-					label = label .. " " .. file.date
+					label = label .. " " .. date
 				end
 			else
 				if file.fmt then
@@ -291,18 +324,12 @@ function pub.fuzzy_load(window, pane, callback, opts)
 
 			table.insert(state_files, { id = file.id, label = label })
 		end
+
+		wezterm.log_info("DEBUG: state_files = " .. wezterm.json_encode(state_files))
 	end
 
-	-- Helper function to escape pattern special characters
-	if not utils.escape_pattern then
-		utils.escape_pattern = function(str)
-			return str:gsub("([%(%)%.%%%+%-%*%?%[%]%^%$])", "%%%1")
-		end
-	end
-
-	-- Always use the recursive search function
-	insert_choices()
-	wezterm.log_info("State_files:", state_files)
+	-- Process all files
+	process_files()
 
 	window:perform_action(
 		wezterm.action.InputSelector({
