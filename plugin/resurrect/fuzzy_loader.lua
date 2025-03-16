@@ -205,6 +205,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			-- Parse the stdout and construct the file table
 			for line in stdout:gmatch("[^\n]+") do
 				local epoch, type, file = line:match("%s*(%d+)%s+.+[/\\]([^/\\]+)[/\\]([^/\\]+%.json)$")
+				wezterm.log_info("line:", line, " epoch:", epoch, " type:", type, " file:", file)
 				if epoch and file and type and type == type then
 					-- Collect all the included files recursively for each type
 					local fmt = opts[string.format("fmt_%s", type)]
