@@ -114,7 +114,6 @@ end
 ---@return string|nil
 function pub.resurrect_on_gui_startup()
 	local file_path = pub.save_state_dir .. utils.separator .. "current_state"
-	print(file_path)
 	local suc, err = pcall(function()
 		local file = io.open(file_path, "r")
 		if not file then
