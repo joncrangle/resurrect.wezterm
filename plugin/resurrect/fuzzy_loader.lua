@@ -294,8 +294,6 @@ function pub.fuzzy_load(window, pane, callback, opts)
 		end
 	end
 
-	wezterm.log_info("DEBUG: state_files = ", state_files)
-
 	-- Helper function to escape pattern special characters
 	if not utils.escape_pattern then
 		utils.escape_pattern = function(str)
@@ -305,6 +303,8 @@ function pub.fuzzy_load(window, pane, callback, opts)
 
 	-- Always use the recursive search function
 	insert_choices()
+
+	wezterm.log_info("DEBUG: state_files = ", state_files)
 
 	if #state_files == 0 then
 		wezterm.emit("resurrect.error", "No existing state files to select")
