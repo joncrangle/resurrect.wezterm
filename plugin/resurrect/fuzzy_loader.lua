@@ -332,9 +332,6 @@ function pub.fuzzy_load(window, pane, callback, opts)
 				end
 				-- do we still have an oversize? we can do something only if we have a date, otherwise we did our best
 				if oversize ~= 0 and opts.show_state_with_date then
-					-- first we remove the leading space
-					label.date_raw = label.date_raw:sub(2)
-					label.date_len = label.date_len - 1
 					local new_len = math.max(0, label.date_len - oversize)
 					if new_len == 0 then
 						file.date_raw = ""
