@@ -15,7 +15,8 @@ utils.separator = utils.is_windows and "\\" or "/"
 ---@param str string
 ---@return string
 function utils.strip_format(str)
-	return str:gsub(string.char(27) .. "%[[^m]*m", "")
+	local clean_str = str:gsub(string.char(27) .. "%[[^m]*m", "")
+	return clean_str
 end
 
 -- getting screen dimensions
