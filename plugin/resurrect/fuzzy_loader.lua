@@ -259,7 +259,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 					label.padding_raw = string.rep(".", max_length - #file.filename - 1)
 					label.padding_len = #label.padding_raw
 				end
-				label.date_raw = file.date
+				label.date_raw = " " .. file.date
 				if opts.fmt_date then
 					label.date_fmt = opts.fmt_date(label.date_raw)
 					label.date_len = #utils.strip_format(label.date_fmt)
@@ -282,6 +282,9 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			local width = label.name_len + label.date_len + 4
 			-- `oversize` is the number of character we should remove
 			local oversize = math.max(0, width - win_width)
+			wezterm.log_info("fmt_name:", label.name_fmt)
+			wezterm.log_info("stp_name:", utils.strip_format(label.name_fmt))
+			wezterm.log_info("name_len:", label.name_len)
 			wezterm.log_info("width:", width)
 			wezterm.log_info("win_width:", win_width)
 			wezterm.log_info("oversize:", oversize)
@@ -310,6 +313,9 @@ function pub.fuzzy_load(window, pane, callback, opts)
 				end
 				-- do we still have an oversize? we can do something only if we have a date, otherwise we did our best
 				if oversize ~= 0 and opts.show_state_with_date then
+					-- first we remove the leading space
+					label.date_raw = label.date_raw:sub(2)
+					label.date_len = label.date_len - 1
 					local new_len = math.max(0, label.date_len - oversize)
 					if new_len == 0 then
 						file.date_raw = ""
@@ -418,7 +424,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 								end
 
 								if opts.fmt_date then
-									label = label .. " " .. opts.fmt_date(file.date)
+									label = label .. opts.fmt_date(" " .. file.date)
 								else
 									label = label .. " " .. file.date
 								end
