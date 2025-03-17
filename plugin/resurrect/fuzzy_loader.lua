@@ -402,6 +402,8 @@ function pub.fuzzy_load(window, pane, callback, opts)
 							if opts.show_state_with_date then
 								if #file.filename < max_length then
 									label = " " .. string.rep(".", max_length - #file.filename - 1) .. " "
+								else
+									label = "  "
 								end
 
 								if file.fmt then
