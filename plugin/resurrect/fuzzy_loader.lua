@@ -282,8 +282,8 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			local width = label.name_len + label.date_len + 4
 			-- `oversize` is the number of character we should remove
 			local oversize = math.max(0, width - win_width)
-			wezterm.log_info("fmt_name:", label.name_fmt)
-			wezterm.log_info("stp_name:", utils.strip_format(label.name_fmt))
+			wezterm.log_info("fmt_name:'", label.name_fmt, "'")
+			wezterm.log_info("stp_name:'", utils.strip_format(label.name_fmt), "'")
 			wezterm.log_info("name_len:", label.name_len)
 			wezterm.log_info("width:", width)
 			wezterm.log_info("win_width:", win_width)
