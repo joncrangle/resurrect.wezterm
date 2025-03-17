@@ -282,8 +282,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 				label.name_len = utf8len(label.name_fmt)
 			end
 
-			-- check the overall width against the available width, four characters are added to account for those used by wezterm
-			-- for selection when not using fuzzy matching and remain, but are blank when using fuzzy matching
+			-- check the overall width against the available width
 			local width = label.name_len + label.date_len + 4
 			-- `oversize` is the number of character we should remove
 			local oversize = math.max(0, width - win_width)
@@ -339,7 +338,9 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			return result
 		end
 
-		local width = utils.get_current_window_width()
+		-- During the selection view, InputSelector will take 4 characters on the left and 2 characters
+		-- on the right of the window
+		local width = utils.get_current_window_width() - 6
 		local must_shrink = nil
 
 		if opts.ignore_screen_width then
