@@ -213,7 +213,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 				local epoch, type, file = line:match("%s*(%d+)%s+.+[/\\]([^/\\]+)[/\\]([^/\\]+%.json)$")
 				if epoch and file and type and type == type then
 					-- Calculating the maximum file length
-					max_length = math.max(max_length, #file)
+					max_length = math.max(max_length, utf8len(file))
 
 					-- Collecting all relevant information about the file
 					local fmt = opts[string.format("fmt_%s", type)]
@@ -254,29 +254,29 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			local result = ""
 			-- fill raw values and run a dry run of the formatting to measure the resulting length
 			label.filename_raw = file.filename
-			label.filename_len = #label.filename_raw
+			label.filename_len = utf8len(label.filename_raw)
 			if opts.show_state_with_date then
 				label.separator = " "
 				if utf8len(file.filename) < max_length then
 					label.padding_raw = string.rep(".", max_length - utf8len(file.filename) - 1)
-					label.padding_len = #label.padding_raw
+					label.padding_len = utf8len(label.padding_raw)
 				end
 				label.date_raw = " " .. file.date
 				if opts.fmt_date then
 					label.date_fmt = opts.fmt_date(label.date_raw)
-					label.date_len = #strip_format(label.date_fmt)
+					label.date_len = utf8len(strip_format(label.date_fmt))
 				else
 					label.date_fmt = label.date_raw
-					label.date_len = #label.date_fmt_fmt
+					label.date_len = utf8len(label.date_fmt_fmt)
 				end
 			end
 			label.name_raw = label.filename_raw .. label.separator .. label.padding_raw .. label.separator
 			if file.fmt then
 				label.name_fmt = file.fmt(label.name_raw)
-				label.name_len = #strip_format(label.name_fmt)
+				label.name_len = utf8len(strip_format(label.name_fmt))
 			else
 				label.name_fmt = label.name_raw
-				label.name_len = #label.name_fmt
+				label.name_len = utf8len(label.name_fmt)
 			end
 
 			-- check the overall width against the available width, four characters are added to account for those used by wezterm
@@ -374,7 +374,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 								if opts.fmt_date then
 									estimated_length = utf8len(strip_format(opts.fmt_date(file.date))) + 2 -- for the separators
 								else
-									estimated_length = #file.date
+									estimated_length = utf8len(file.date)
 								end
 							end
 							-- consider the "cost" of the formatting of the filename, i.e., if the format function adds characters
@@ -382,7 +382,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 							-- we use a real entry instead of an empty string to prevent formatting error if the format function has
 							-- expectations to work correctly
 							local fmt_cost = 0
-							local nominal_length = #file.filename
+							local nominal_length = utf8len(file.filename)
 							if opts.fmt_tab then
 								fmt_cost = utf8len(strip_format(opts.fmt_tab(file.filename))) - nominal_length
 							end
