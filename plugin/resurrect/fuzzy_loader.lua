@@ -387,8 +387,10 @@ function pub.fuzzy_load(window, pane, callback, opts)
 								fmt_cost = utf8len(strip_format(opts.fmt_tab(file.filename))) - nominal_length
 							end
 							if opts.fmt_window then
-								fmt_cost =
-									math.max(fmt_cost, strip_format(opts.fmt_window(file.filename)) - nominal_length)
+								fmt_cost = math.max(
+									fmt_cost,
+									utf8len(strip_format(opts.fmt_window(file.filename))) - nominal_length
+								)
 							end
 							if opts.fmt_workspace then
 								fmt_cost = math.max(
