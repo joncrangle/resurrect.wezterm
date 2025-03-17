@@ -47,17 +47,6 @@ end
 ---@param str string
 ---@return number
 function utils.utf8len(str)
-	local len = 0
-	for _ in string.gmatch(str, "[%z\1-\127\194-\244][\128-\191]*") do
-		len = len + 1
-	end
-	return len
-end
-
--- returns the length of a utf8 string
----@param str string
----@return number
-function utils.utf8len_alt(str)
 	local _, len = str:gsub("[%z\1-\127\194-\244][\128-\191]*", "")
 	return len
 end
