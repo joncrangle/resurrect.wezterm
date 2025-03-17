@@ -403,7 +403,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 								if #file.filename < max_length then
 									label = " " .. string.rep(".", max_length - #file.filename - 1) .. " "
 								else
-									label = "  "
+									label = " "
 								end
 
 								if file.fmt then
