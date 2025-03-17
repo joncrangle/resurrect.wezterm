@@ -326,9 +326,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 					-- replace it by opts.name_truncature, thus we need to correct that by adding its length
 					oversize = oversize + pad_len
 					-- here we can re-adjust the filename string to fit the available room, but up to a point
-					local reduction = label.filename_len
-						- math.max(min_filename_len, label.filename_len - oversize)
-						+ pad_len -- we must consider that we'll put back something
+					local reduction = label.filename_len - math.max(min_filename_len, label.filename_len - oversize)
 					oversize = oversize - reduction
 					label.filename_raw = utils.replace_center(label.filename_raw, reduction, str_pad)
 				end
@@ -361,7 +359,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 
 		-- During the selection view, InputSelector will take 4 characters on the left and 2 characters
 		-- on the right of the window
-		local width = utils.get_current_window_width() - 6
+		local width = utils.get_current_window_width() - 4
 		local must_shrink = nil
 
 		if opts.ignore_screen_width then
