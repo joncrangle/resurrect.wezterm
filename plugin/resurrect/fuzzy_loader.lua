@@ -328,7 +328,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 					-- here we can re-adjust the filename string to fit the available room, but up to a point
 					local reduction = label.filename_len
 						- math.max(min_filename_len, label.filename_len - oversize)
-						- pad_len -- we must consider that we'll put back something
+						+ pad_len -- we must consider that we'll put back something
 					oversize = oversize - reduction
 					label.filename_raw = utils.replace_center(label.filename_raw, reduction, str_pad)
 				end
