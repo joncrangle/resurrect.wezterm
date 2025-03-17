@@ -257,7 +257,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 				label.separator = " "
 				if #file.filename < max_length then
 					label.padding_raw = string.rep(".", max_length - #file.filename - 1)
-					label.padding_len = #label.padding_rew
+					label.padding_len = #label.padding_raw
 				end
 				label.date_raw = file.date
 				if opts.fmt_date then
