@@ -264,7 +264,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 					label.padding_raw = string.rep(".", max_length - utf8len(file.filename) - 1)
 					label.padding_len = utf8len(label.padding_raw)
 				end
-				label.date_raw = " " .. file.date
+				label.date_raw = file.date
 				if opts.fmt_date then
 					label.date_fmt = opts.fmt_date(label.date_raw)
 					label.date_len = utf8len(strip_format(label.date_fmt))
@@ -421,9 +421,9 @@ function pub.fuzzy_load(window, pane, callback, opts)
 								end
 
 								if opts.fmt_date then
-									label = label .. opts.fmt_date(" " .. file.date)
+									label = label .. opts.fmt_date(file.date)
 								else
-									label = label .. " " .. file.date
+									label = label .. file.date
 								end
 							else
 								if file.fmt then
