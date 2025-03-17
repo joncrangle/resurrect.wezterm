@@ -5,7 +5,7 @@ local pub = {}
 ---@alias fmt_fun fun(label: string): string
 ---@alias fuzzy_load_opts {title: string, description: string, fuzzy_description: string, is_fuzzy: boolean,
 ---ignore_workspaces: boolean, ignore_tabs: boolean, ignore_windows: boolean, fmt_window: fmt_fun, fmt_workspace: fmt_fun,
----fmt_tab: fmt_fun, fmt_date: fmt_fun, show_state_with_date: boolean, date_format: string }
+---fmt_tab: fmt_fun, fmt_date: fmt_fun, show_state_with_date: boolean, date_format: string, ignore_screen_width: boolean }
 
 ---Returns default fuzzy loading options
 ---@return fuzzy_load_opts
@@ -18,6 +18,7 @@ function pub.get_default_fuzzy_load_opts()
 		ignore_workspaces = false,
 		ignore_windows = false,
 		ignore_tabs = false,
+		ignore_screen_width = true,
 		date_format = "%d-%m-%Y %H:%M:%S",
 		show_state_with_date = false,
 		fmt_date = function(date)
@@ -71,6 +72,8 @@ function pub.fuzzy_load(window, pane, callback, opts)
 	local folder = require("resurrect.state_manager").save_state_dir
 
 	-- Optimized recursive JSON file finder for all platforms
+	---@param base_path string starting path from which the recursive search takes place
+	---@return string
 	local function find_json_files_recursive(base_path)
 		local cmd
 
@@ -191,8 +194,10 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			handle:close()
 			return stdout
 		end
+		return ""
 	end
 
+	-- build a table with the output of the file finder function
 	local function insert_choices()
 		local files = {}
 		local max_length = 0
@@ -222,11 +227,118 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			end
 		end
 
-		-- getting screen dimensions
-		local width = os.getenv("COLUMNS")
-		wezterm.log_info("Columns:", width)
+		-- Format the label given the available screen width, starting with the padding and then reducing the
+		-- filename itself up to a minimum length, then the date can be reduced as a last resort but otherwise
+		-- nothing else can be done because the screen is too small
+		---@param win_width number width of the window
+		---@param file table file package with all necessary information
+		---@return string
+		local function format_label(win_width, file)
+			local min_filename_len = 10 -- minimum size of the filename to remain decypherable
+			local str_pad = " " .. wezterm.nerdfonts.cod_ellipsis .. "  "
+			local label = {
+				filename_raw = "",
+				filename_len = 0,
+				separator = "",
+				padding_raw = "",
+				padding_len = 0,
+				name_raw = "",
+				name_fmt = "",
+				name_len = 0,
+				date_raw = "",
+				date_fmt = "",
+				date_len = 0,
+			}
+			local result = ""
+			-- fill raw values and run a dry run of the formatting to measure the resulting length
+			label.filename_raw = file.filename
+			label.filename_len = #label.filename_raw
+			if opts.show_state_with_date then
+				label.separator = " "
+				if #file.filename < max_length then
+					label.padding_raw = string.rep(".", max_length - #file.filename - 1)
+					label.padding_len = #label.padding_rew
+				end
+				label.date_raw = file.date
+				if opts.fmt_date then
+					label.date_fmt = opts.fmt_date(label.date_raw)
+					label.date_len = #utils.strip_format(label.date_fmt)
+				else
+					label.date_fmt = label.date_raw
+					label.date_len = #label.date_fmt_fmt
+				end
+			end
+			label.name_raw = label.filename_raw .. label.separator .. label.padding_raw .. label.separator
+			if file.fmt then
+				label.name_fmt = file.fmt(label.name_raw)
+				label.name_len = #utils.strip_format(label.name_fmt)
+			else
+				label.name_fmt = label.name_raw
+				label.name_len = #label.name_fmt
+			end
 
-		-- Format and add files to state_files list
+			-- check the overall width against the available width
+			local width = label.name_len + label.date_len
+			-- `oversize` is the number of character we should remove
+			local oversize = math.min(0, width - win_width)
+
+			if oversize == 0 then
+				-- No oversize for this line, thus we keep it as is (though it shouldn't occur when we use this function)
+				return label.name_fmt .. label.date_fmt
+			else
+				-- we need to save a `oversize` character; first check if the padding can be used
+				if label.padding_len ~= 0 then
+					local new_len = math.max(0, label.padding_len - oversize)
+					oversize = oversize - (label.padding_len - new_len) -- update the oversize
+					label.padding_raw = string.rep(".", new_len)
+				end
+				-- we tackle the filename reducing it to a length with a minimum of `min_filename_len`
+				if oversize ~= 0 then
+					-- new we need to apply the size reduction to the filename, our strategy:
+					-- remove the `oversize` from the middle of the filename string and
+					-- replace it by an ellipsis nerdfont between two spaces, thus we need to correct that
+					oversize = oversize + 4
+					-- here we can re-adjust the filename string to fit the available room, but up to a point
+					local reduction = label.filename_len - math.max(min_filename_len, label.filename_len - oversize)
+					oversize = oversize - reduction
+					label.filename_raw = utils.replace_center(label.filename_raw, reduction, str_pad)
+				end
+				-- do we still have an oversize? we can do something only if we have a date, otherwise we did our best
+				if oversize ~= 0 and opts.show_state_with_date then
+					local new_len = math.max(0, label.date_len - oversize)
+					if new_len == 0 then
+						file.date_raw = ""
+					else
+						file.date_raw = file.date_raw:sub(1, new_len)
+					end
+				end
+			end
+
+			-- now we can format and recombine the reduced strings
+			result = label.filename_raw .. label.separator .. label.padding_raw .. label.separator
+			if file.fmt then
+				result = file.fmt(result)
+			end
+			if opts.show_state_with_date then
+				if opts.fmt_date then
+					result = result .. label.separator .. opts.fmt_date(label.date_raw)
+				else
+					result = result .. label.separator .. label.date_raw
+				end
+			end
+
+			return result
+		end
+
+		local width = utils.get_current_window_width()
+
+		local must_shrink = nil
+
+		if opts.ignore_screen_width then
+			must_shrink = false
+		end
+
+		-- Add files to state_files list and apply the formatting functions
 		local types = { "workspace", "window", "tab" }
 		for _, type in ipairs(types) do
 			local include = not opts[string.format("ignore_%ss", type)]
@@ -234,34 +346,84 @@ function pub.fuzzy_load(window, pane, callback, opts)
 				for _, file in ipairs(files) do
 					if file.type == type then
 						local label = ""
-
 						if opts.show_state_with_date then
-							local padding = " "
-							if #file.filename < max_length then
-								padding = padding .. string.rep(".", max_length - #file.filename - 1) .. " "
-							end
-
-							if file.fmt then
-								label = file.fmt(file.filename .. padding)
-							else
-								label = file.filename .. padding
-							end
-
-							local date = os.date(opts.date_format, tonumber(file.epoch))
-							if opts.fmt_date then
-								label = label .. " " .. opts.fmt_date(date)
-							else
-								label = label .. " " .. date
-							end
+							file.date = os.date(opts.date_format, tonumber(file.epoch))
 						else
-							if file.fmt then
-								label = file.fmt(file.filename)
+							file.date = ""
+						end
+
+						-- determines whether we need to manage content to fit the screen, we run this only once
+						if must_shrink == nil then
+							local estimated_length = 0
+							-- consider the length of the formatted date section
+							if opts.show_state_with_date then
+								if opts.fmt_date then
+									estimated_length = #utils.strip_format(opts.fmt_date(file.date)) + 2 -- for the separators
+								else
+									estimated_length = #file.date
+								end
+							end
+							-- consider the "cost" of the formatting of the filename, i.e., if the format function adds characters
+							-- to the visible part of the file section, we test the three possible formatter to get the highest cost
+							-- we use a real entry instead of an empty string to prevent formatting error if the format function has
+							-- expectations to work correctly
+							local fmt_cost = 0
+							local nominal_length = #file.filename
+							if opts.fmt_tab then
+								fmt_cost = #utils.strip_format(opts.fmt_tab(file.filename)) - nominal_length
+							end
+							if opts.fmt_window then
+								fmt_cost = math.max(
+									fmt_cost,
+									#utils.strip_format(opts.fmt_window(file.filename)) - nominal_length
+								)
+							end
+							if opts.fmt_workspace then
+								fmt_cost = math.max(
+									fmt_cost,
+									#utils.strip_format(opts.fmt_workspace(file.filename)) - nominal_length
+								)
+							end
+							-- the longest prompt is derived from the maximum length of the filename plus the cost of the format
+							estimated_length = estimated_length + fmt_cost + max_length
+							if estimated_length > width then
+								must_shrink = true
 							else
-								label = file.filename
+								must_shrink = false
 							end
 						end
 
-						table.insert(state_files, { id = file.id, label = label })
+						if must_shrink then
+							-- we must ensure that the line fits within the width of the screen,
+							-- thus we invoke `format_label` which will take care of this for us
+							-- as smartly as possible
+							table.insert(state_files, { id = file.id, label = format_label(width, file) })
+						else
+							if opts.show_state_with_date then
+								if #file.filename < max_length then
+									label = " " .. string.rep(".", max_length - #file.filename - 1) .. " "
+								end
+
+								if file.fmt then
+									label = file.fmt(file.filename .. label)
+								else
+									label = file.filename .. label
+								end
+
+								if opts.fmt_date then
+									label = label .. " " .. opts.fmt_date(file.date)
+								else
+									label = label .. " " .. file.date
+								end
+							else
+								if file.fmt then
+									label = file.fmt(file.filename)
+								else
+									label = file.filename
+								end
+							end
+							table.insert(state_files, { id = file.id, label = label })
+						end
 					end
 				end
 			end
