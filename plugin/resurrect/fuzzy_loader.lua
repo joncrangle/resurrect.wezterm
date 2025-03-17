@@ -302,6 +302,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 					-- here we can re-adjust the filename string to fit the available room, but up to a point
 					local reduction = label.filename_len - math.max(min_filename_len, label.filename_len - oversize)
 					oversize = oversize - reduction
+					wezterm.log_info("reduction:", reduction)
 					label.filename_raw = utils.replace_center(label.filename_raw, reduction, str_pad)
 				end
 				-- do we still have an oversize? we can do something only if we have a date, otherwise we did our best
