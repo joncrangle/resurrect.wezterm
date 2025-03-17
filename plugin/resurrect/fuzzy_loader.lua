@@ -281,7 +281,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			-- for selection when not using fuzzy matching and remain, but are blank when using fuzzy matching
 			local width = label.name_len + label.date_len + 4
 			-- `oversize` is the number of character we should remove
-			local oversize = math.min(0, width - win_width)
+			local oversize = math.max(0, width - win_width)
 			wezterm.log_info("width:", width)
 			wezterm.log_info("win_width:", win_width)
 			wezterm.log_info("oversize:", oversize)
