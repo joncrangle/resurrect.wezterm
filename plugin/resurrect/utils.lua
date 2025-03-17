@@ -15,7 +15,7 @@ utils.separator = utils.is_windows and "\\" or "/"
 ---@param str string
 ---@return string
 function utils.strip_format(str)
-	local clean_str = str:gsub(string.char(27) .. "%[[^m]*m", "")
+	local clean_str, _ = str:gsub(string.char(27) .. "%[[^m]*m", "")
 	return clean_str
 end
 
@@ -41,6 +41,25 @@ function utils.replace_center(str, len, pad)
 	local mid = math.floor(#str / 2)
 	local start = mid - math.floor(len / 2)
 	return str:sub(1, start) .. pad .. str:sub(start + len + 1)
+end
+
+-- returns the length of a utf8 string
+---@param str string
+---@return number
+function utils.utf8len(str)
+	local len = 0
+	for _ in string.gmatch(str, "[%z\1-\127\194-\244][\128-\191]*") do
+		len = len + 1
+	end
+	return len
+end
+
+-- returns the length of a utf8 string
+---@param str string
+---@return number
+function utils.utf8len_alt(str)
+	local _, len = str:gsub("[%z\1-\127\194-\244][\128-\191]*", "")
+	return len
 end
 
 return utils
