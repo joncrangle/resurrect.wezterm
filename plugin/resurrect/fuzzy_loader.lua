@@ -7,7 +7,8 @@ local pub = {}
 ---@alias fmt_fun fun(label: string): string
 ---@alias fuzzy_load_opts {title: string, description: string, fuzzy_description: string, is_fuzzy: boolean,
 ---ignore_workspaces: boolean, ignore_tabs: boolean, ignore_windows: boolean, fmt_window: fmt_fun, fmt_workspace: fmt_fun,
----fmt_tab: fmt_fun, fmt_date: fmt_fun, show_state_with_date: boolean, date_format: string, ignore_screen_width: boolean }
+---fmt_tab: fmt_fun, fmt_date: fmt_fun, show_state_with_date: boolean, date_format: string, ignore_screen_width: boolean,
+---name_truncature: string}
 
 ---Returns default fuzzy loading options
 ---@return fuzzy_load_opts
@@ -23,6 +24,7 @@ function pub.get_default_fuzzy_load_opts()
 		ignore_screen_width = true,
 		date_format = "%d-%m-%Y %H:%M:%S",
 		show_state_with_date = false,
+		name_truncature = " " .. wezterm.nerdfonts.cod_ellipsis .. "  ",
 		fmt_date = function(date)
 			return wezterm.format({
 				{ Foreground = { AnsiColor = "White" } },
@@ -237,7 +239,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 		---@return string
 		local function format_label(win_width, file)
 			local min_filename_len = 10 -- minimum size of the filename to remain decypherable
-			local str_pad = " " .. wezterm.nerdfonts.cod_ellipsis .. "  "
+			local str_pad = opts.name_truncature or "..."
 			local label = {
 				filename_raw = "",
 				filename_len = 0,
@@ -284,13 +286,6 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			local width = label.name_len + label.date_len + 4
 			-- `oversize` is the number of character we should remove
 			local oversize = math.max(0, width - win_width)
-			wezterm.log_info("fmt_name:'", label.name_fmt, "'")
-			wezterm.log_info("stp_name:'", strip_format(label.name_fmt), "'")
-			wezterm.log_info("name_len:", label.name_len)
-			wezterm.log_info("utf8_len:", utf8len(strip_format(label.name_fmt)))
-			wezterm.log_info("width:", width)
-			wezterm.log_info("win_width:", win_width)
-			wezterm.log_info("oversize:", oversize)
 
 			if oversize == 0 then
 				-- No oversize for this line, thus we keep it as is (though it shouldn't occur when we use this function)
@@ -306,12 +301,11 @@ function pub.fuzzy_load(window, pane, callback, opts)
 				if oversize ~= 0 then
 					-- new we need to apply the size reduction to the filename, our strategy:
 					-- remove the `oversize` from the middle of the filename string and
-					-- replace it by an ellipsis nerdfont between two spaces, thus we need to correct that
-					oversize = oversize + 4
+					-- replace it by opts.name_truncature, thus we need to correct that by adding its length
+					oversize = oversize + utf8len(str_pad)
 					-- here we can re-adjust the filename string to fit the available room, but up to a point
 					local reduction = label.filename_len - math.max(min_filename_len, label.filename_len - oversize)
 					oversize = oversize - reduction
-					wezterm.log_info("reduction:", reduction)
 					label.filename_raw = utils.replace_center(label.filename_raw, reduction, str_pad)
 				end
 				-- do we still have an oversize? we can do something only if we have a date, otherwise we did our best
