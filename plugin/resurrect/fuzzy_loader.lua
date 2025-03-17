@@ -61,6 +61,9 @@ end
 function pub.fuzzy_load(window, pane, callback, opts)
 	wezterm.emit("resurrect.fuzzy_loader.fuzzy_load.start", window, pane)
 	local state_files = {}
+	-- pre-calculation of formatting cost
+	local fmt_cost = {}
+	local types = { "workspace", "window", "tab" }
 
 	if opts == nil then
 		opts = pub.get_default_fuzzy_load_opts()
@@ -213,10 +216,29 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			for line in stdout:gmatch("[^\n]+") do
 				local epoch, type, file = line:match("%s*(%d+)%s+.+[/\\]([^/\\]+)[/\\]([^/\\]+%.json)$")
 				if epoch and file and type and type == type then
-					-- Calculating the maximum file length
-					max_length = math.max(max_length, utf8len(file))
+					-- consider the "cost" of the formatting of the filename, i.e., if the format function adds characters
+					-- to the visible part of the file section, we test the three possible formatter to get the highest cost
+					-- we use a real entry instead of an empty string to prevent formatting error if the format function has
+					-- expectations to work correctly
+					-- This prevent from having to format every filename, instead we can take the filename length and then
+					-- the cost of formatting per type
+					if #fmt_cost == 0 then
+						fmt_cost.workspace = 0
+						fmt_cost.window = 0
+						fmt_cost.tab = 0
+						local len = utf8len(file)
+						for _, type in types do
+							local fmt = opts[string.format("fmt_%s", type)]
+							if fmt then
+								fmt_cost[type] = utf8len(fmt(file)) - len
+							end
+						end
+					end
 
-					-- Collecting all relevant information about the file
+					-- Calculating the maximum file length
+					max_length = math.max(max_length, utf8len(file) + fmt_cost[type])
+
+					-- collecting all relevant information about the file
 					local fmt = opts[string.format("fmt_%s", type)]
 					table.insert(files, {
 						id = type .. utils.separator .. file,
@@ -329,9 +351,9 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			end
 			if opts.show_state_with_date then
 				if opts.fmt_date then
-					result = result .. label.separator .. opts.fmt_date(label.date_raw)
+					result = result .. opts.fmt_date(label.date_raw)
 				else
-					result = result .. label.separator .. label.date_raw
+					result = result .. label.date_raw
 				end
 			end
 
@@ -348,7 +370,6 @@ function pub.fuzzy_load(window, pane, callback, opts)
 		end
 
 		-- Add files to state_files list and apply the formatting functions
-		local types = { "workspace", "window", "tab" }
 		for _, type in ipairs(types) do
 			local include = not opts[string.format("ignore_%ss", type)]
 			if include then
@@ -372,29 +393,8 @@ function pub.fuzzy_load(window, pane, callback, opts)
 									estimated_length = utf8len(file.date)
 								end
 							end
-							-- consider the "cost" of the formatting of the filename, i.e., if the format function adds characters
-							-- to the visible part of the file section, we test the three possible formatter to get the highest cost
-							-- we use a real entry instead of an empty string to prevent formatting error if the format function has
-							-- expectations to work correctly
-							local fmt_cost = 0
-							local nominal_length = utf8len(file.filename)
-							if opts.fmt_tab then
-								fmt_cost = utf8len(strip_format(opts.fmt_tab(file.filename))) - nominal_length
-							end
-							if opts.fmt_window then
-								fmt_cost = math.max(
-									fmt_cost,
-									utf8len(strip_format(opts.fmt_window(file.filename))) - nominal_length
-								)
-							end
-							if opts.fmt_workspace then
-								fmt_cost = math.max(
-									fmt_cost,
-									utf8len(strip_format(opts.fmt_workspace(file.filename))) - nominal_length
-								)
-							end
-							-- the longest prompt is derived from the maximum length of the filename plus the cost of the format
-							estimated_length = estimated_length + fmt_cost + max_length
+							-- the longest prompt is derived from the maximum length of the formatted filename
+							estimated_length = estimated_length + max_length
 							if estimated_length > width then
 								must_shrink = true
 							else
