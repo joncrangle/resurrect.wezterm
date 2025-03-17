@@ -1,5 +1,7 @@
 local wezterm = require("wezterm") --[[@as Wezterm]] --- this type cast invokes the LSP module for Wezterm
 local utils = require("resurrect.utils")
+local strip_format = utils.strip_format
+local utf8len = utils.utf8len
 local pub = {}
 
 ---@alias fmt_fun fun(label: string): string
@@ -255,14 +257,14 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			label.filename_len = #label.filename_raw
 			if opts.show_state_with_date then
 				label.separator = " "
-				if #file.filename < max_length then
-					label.padding_raw = string.rep(".", max_length - #file.filename - 1)
+				if utf8len(file.filename) < max_length then
+					label.padding_raw = string.rep(".", max_length - utf8len(file.filename) - 1)
 					label.padding_len = #label.padding_raw
 				end
 				label.date_raw = " " .. file.date
 				if opts.fmt_date then
 					label.date_fmt = opts.fmt_date(label.date_raw)
-					label.date_len = #utils.strip_format(label.date_fmt)
+					label.date_len = #strip_format(label.date_fmt)
 				else
 					label.date_fmt = label.date_raw
 					label.date_len = #label.date_fmt_fmt
@@ -271,7 +273,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			label.name_raw = label.filename_raw .. label.separator .. label.padding_raw .. label.separator
 			if file.fmt then
 				label.name_fmt = file.fmt(label.name_raw)
-				label.name_len = #utils.strip_format(label.name_fmt)
+				label.name_len = #strip_format(label.name_fmt)
 			else
 				label.name_fmt = label.name_raw
 				label.name_len = #label.name_fmt
@@ -283,11 +285,9 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			-- `oversize` is the number of character we should remove
 			local oversize = math.max(0, width - win_width)
 			wezterm.log_info("fmt_name:'", label.name_fmt, "'")
-			wezterm.log_info("stp_name:'", utils.strip_format(label.name_fmt), "'")
+			wezterm.log_info("stp_name:'", strip_format(label.name_fmt), "'")
 			wezterm.log_info("name_len:", label.name_len)
-			wezterm.log_info("utf8_len:", utils.utf8len(utils.strip_format(label.name_fmt)))
-			wezterm.log_info("utf8_alt:", utils.utf8len_alt(utils.strip_format(label.name_fmt)))
-			wezterm.log_info("utf8_fmt:", utils.utf8len(label.name_fmt))
+			wezterm.log_info("utf8_len:", utf8len(strip_format(label.name_fmt)))
 			wezterm.log_info("width:", width)
 			wezterm.log_info("win_width:", win_width)
 			wezterm.log_info("oversize:", oversize)
@@ -372,7 +372,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 							-- consider the length of the formatted date section
 							if opts.show_state_with_date then
 								if opts.fmt_date then
-									estimated_length = #utils.strip_format(opts.fmt_date(file.date)) + 2 -- for the separators
+									estimated_length = utf8len(strip_format(opts.fmt_date(file.date))) + 2 -- for the separators
 								else
 									estimated_length = #file.date
 								end
@@ -384,18 +384,16 @@ function pub.fuzzy_load(window, pane, callback, opts)
 							local fmt_cost = 0
 							local nominal_length = #file.filename
 							if opts.fmt_tab then
-								fmt_cost = #utils.strip_format(opts.fmt_tab(file.filename)) - nominal_length
+								fmt_cost = utf8len(strip_format(opts.fmt_tab(file.filename))) - nominal_length
 							end
 							if opts.fmt_window then
-								fmt_cost = math.max(
-									fmt_cost,
-									#utils.strip_format(opts.fmt_window(file.filename)) - nominal_length
-								)
+								fmt_cost =
+									math.max(fmt_cost, strip_format(opts.fmt_window(file.filename)) - nominal_length)
 							end
 							if opts.fmt_workspace then
 								fmt_cost = math.max(
 									fmt_cost,
-									#utils.strip_format(opts.fmt_workspace(file.filename)) - nominal_length
+									utf8len(strip_format(opts.fmt_workspace(file.filename))) - nominal_length
 								)
 							end
 							-- the longest prompt is derived from the maximum length of the filename plus the cost of the format
@@ -414,8 +412,8 @@ function pub.fuzzy_load(window, pane, callback, opts)
 							table.insert(state_files, { id = file.id, label = format_label(width, file) })
 						else
 							if opts.show_state_with_date then
-								if #file.filename < max_length then
-									label = " " .. string.rep(".", max_length - #file.filename - 1) .. " "
+								if utf8len(file.filename) < max_length then
+									label = " " .. string.rep(".", max_length - utf8len(file.filename) - 1) .. " "
 								else
 									label = " "
 								end
