@@ -227,7 +227,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 						fmt_cost.window = 0
 						fmt_cost.tab = 0
 						local len = utf8len(file)
-						for _, type in types do
+						for _, type in ipairs(types) do
 							local fmt = opts[string.format("fmt_%s", type)]
 							if fmt then
 								fmt_cost[type] = utf8len(fmt(file)) - len
