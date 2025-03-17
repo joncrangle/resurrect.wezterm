@@ -8,7 +8,7 @@ local pub = {}
 ---@alias fuzzy_load_opts {title: string, description: string, fuzzy_description: string, is_fuzzy: boolean,
 ---ignore_workspaces: boolean, ignore_tabs: boolean, ignore_windows: boolean, fmt_window: fmt_fun, fmt_workspace: fmt_fun,
 ---fmt_tab: fmt_fun, fmt_date: fmt_fun, show_state_with_date: boolean, date_format: string, ignore_screen_width: boolean,
----name_truncature: string}
+---name_truncature: string, min_filename_size: number}
 
 ---Returns default fuzzy loading options
 ---@return fuzzy_load_opts
@@ -25,6 +25,7 @@ function pub.get_default_fuzzy_load_opts()
 		date_format = "%d-%m-%Y %H:%M:%S",
 		show_state_with_date = false,
 		name_truncature = " " .. wezterm.nerdfonts.cod_ellipsis .. "  ",
+		min_filename_size = 10,
 		fmt_date = function(date)
 			return wezterm.format({
 				{ Foreground = { AnsiColor = "White" } },
@@ -181,24 +182,22 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			)
 		end
 
-		if not utils.is_windows then
-			-- Execute the command and capture stdout for non-Windows
-			local handle = io.popen(cmd)
-			if handle == nil then
-				wezterm.emit("resurrect.error", "Could not open process: " .. cmd)
-				return ""
-			end
-
-			local stdout = handle:read("*a")
-			if stdout == nil then
-				wezterm.emit("resurrect.error", "No output when running: " .. cmd)
-				return ""
-			end
-
-			handle:close()
-			return stdout
+		-- Execute the command and capture stdout for non-Windows
+		local handle = io.popen(cmd)
+		if handle == nil then
+			wezterm.emit("resurrect.error", "Could not open process: " .. cmd)
+			return ""
 		end
-		return ""
+
+		local stdout = handle:read("*a")
+		if stdout == nil then
+			wezterm.emit("resurrect.error", "No output when running: " .. cmd)
+			return ""
+		end
+
+		handle:close()
+
+		return stdout
 	end
 
 	-- build a table with the output of the file finder function
@@ -231,6 +230,10 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			end
 		end
 
+		-- simulate static values for `format_label`
+		local min_filename_len = opts.min_filename_size or 10 -- minimum size of the filename to remain decypherable
+		local str_pad = opts.name_truncature or "..."
+		local pad_len = utf8len(str_pad)
 		-- Format the label given the available screen width, starting with the padding and then reducing the
 		-- filename itself up to a minimum length, then the date can be reduced as a last resort but otherwise
 		-- nothing else can be done because the screen is too small
@@ -238,8 +241,6 @@ function pub.fuzzy_load(window, pane, callback, opts)
 		---@param file table file package with all necessary information
 		---@return string
 		local function format_label(win_width, file)
-			local min_filename_len = 10 -- minimum size of the filename to remain decypherable
-			local str_pad = opts.name_truncature or "..."
 			local label = {
 				filename_raw = "",
 				filename_len = 0,
@@ -302,7 +303,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 					-- new we need to apply the size reduction to the filename, our strategy:
 					-- remove the `oversize` from the middle of the filename string and
 					-- replace it by opts.name_truncature, thus we need to correct that by adding its length
-					oversize = oversize + utf8len(str_pad)
+					oversize = oversize + pad_len
 					-- here we can re-adjust the filename string to fit the available room, but up to a point
 					local reduction = label.filename_len - math.max(min_filename_len, label.filename_len - oversize)
 					oversize = oversize - reduction
@@ -339,7 +340,6 @@ function pub.fuzzy_load(window, pane, callback, opts)
 		end
 
 		local width = utils.get_current_window_width()
-
 		local must_shrink = nil
 
 		if opts.ignore_screen_width then
