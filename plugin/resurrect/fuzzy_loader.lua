@@ -336,9 +336,9 @@ function pub.fuzzy_load(window, pane, callback, opts)
 				if oversize ~= 0 and opts.show_state_with_date then
 					local new_len = math.max(0, label.date_len - oversize)
 					if new_len == 0 then
-						file.date_raw = ""
+						label.date_raw = ""
 					else
-						file.date_raw = file.date_raw:sub(1, new_len)
+						label.date_raw = label.date_raw:sub(1, new_len)
 					end
 				end
 			end
