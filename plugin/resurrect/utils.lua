@@ -33,8 +33,8 @@ end
 ---@param len number length to be removed from the middle of str
 ---@param pad string string that must be inserted in place of the missing part of str
 function utils.replace_center(str, len, pad)
-	local mid = math.floor(#str / 2)
-	local start = mid - math.floor(len / 2)
+	local mid = #str // 2
+	local start = mid - (len // 2)
 	return str:sub(1, start) .. pad .. str:sub(start + len + 1)
 end
 
