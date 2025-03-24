@@ -17,11 +17,9 @@ end
 -- getting screen dimensions
 ---@return number
 function utils.get_current_window_width()
-	local windows = wezterm.mux.all_windows()
+	local windows = wezterm.gui.gui_windows()
 	for _, window in ipairs(windows) do
-		local window_id = window:window_id()
-		local gui_window = wezterm.gui.gui_window_for_mux_window(window_id)
-		if gui_window:is_focused() then
+		if window:is_focused() then
 			return window:active_tab():get_size().cols
 		end
 	end
