@@ -247,7 +247,6 @@ function pub.fuzzy_load(window, pane, callback, opts)
 						fmt = fmt,
 						type = type,
 					})
-					-- end
 				end
 			end
 		end
