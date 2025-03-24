@@ -312,7 +312,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 				-- No oversize for this line, thus we keep it as is (though it shouldn't occur when we use this function)
 				return label.name_fmt .. label.date_fmt
 			else
-				-- we need to save a `oversize` character; first check if the padding can be used
+				-- we need to remove characters; first check if the padding can be used
 				if label.padding_len ~= 0 then
 					local new_len = math.max(0, label.padding_len - oversize)
 					oversize = oversize - (label.padding_len - new_len) -- update the oversize
