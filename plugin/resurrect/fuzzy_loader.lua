@@ -305,33 +305,34 @@ function pub.fuzzy_load(window, pane, callback, opts)
 
 			-- check the overall width against the available width
 			local width = label.name_len + label.date_len + 4
-			-- `oversize` is the number of character we should remove
-			local oversize = math.max(0, width - win_width)
+			-- `overflow_chars` is the number of character we should remove to fit within the size of the window
+			local overflow_chars = math.max(0, width - win_width)
 
-			if oversize == 0 then
-				-- No oversize for this line, thus we keep it as is (though it shouldn't occur when we use this function)
+			if overflow_chars == 0 then
+				-- No oversize for this line, thus we keep it as is
 				return label.name_fmt .. label.date_fmt
 			else
 				-- we need to remove characters; first check if the padding can be used
 				if label.padding_len ~= 0 then
-					local new_len = math.max(0, label.padding_len - oversize)
-					oversize = oversize - (label.padding_len - new_len) -- update the oversize
+					local new_len = math.max(0, label.padding_len - overflow_chars)
+					overflow_chars = overflow_chars - (label.padding_len - new_len) -- update the oversize
 					label.padding_raw = string.rep(".", new_len)
 				end
 				-- we tackle the filename reducing it to a length with a minimum of `min_filename_len`
-				if oversize ~= 0 then
+				if overflow_chars ~= 0 then
 					-- new we need to apply the size reduction to the filename, our strategy:
 					-- remove the `oversize` from the middle of the filename string and
 					-- replace it by opts.name_truncature, thus we need to correct that by adding its length
-					oversize = oversize + pad_len
+					overflow_chars = overflow_chars + pad_len
 					-- here we can re-adjust the filename string to fit the available room, but up to a point
-					local reduction = label.filename_len - math.max(min_filename_len, label.filename_len - oversize)
-					oversize = oversize - reduction
+					local reduction = label.filename_len
+						- math.max(min_filename_len, label.filename_len - overflow_chars)
+					overflow_chars = overflow_chars - reduction
 					label.filename_raw = utils.replace_center(label.filename_raw, reduction, str_pad)
 				end
 				-- do we still have an oversize? we can do something only if we have a date, otherwise we did our best
-				if oversize ~= 0 and opts.show_state_with_date then
-					local new_len = math.max(0, label.date_len - oversize)
+				if overflow_chars ~= 0 and opts.show_state_with_date then
+					local new_len = math.max(0, label.date_len - overflow_chars)
 					if new_len == 0 then
 						label.date_raw = ""
 					else
