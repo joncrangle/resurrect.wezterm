@@ -6,11 +6,6 @@ utils.is_windows = wezterm.target_triple == "x86_64-pc-windows-msvc"
 utils.is_mac = (wezterm.target_triple == "x86_64-apple-darwin" or wezterm.target_triple == "aarch64-apple-darwin")
 utils.separator = utils.is_windows and "\\" or "/"
 
--- Helper function to escape pattern special characters
--- function utils.escape_pattern(str)
--- 	return str:gsub("([%(%)%.%%%+%-%*%?%[%]%^%$])", "%%%1")
--- end
-
 -- Helper function to remove formatting sequence in strings
 ---@param str string
 ---@return string
