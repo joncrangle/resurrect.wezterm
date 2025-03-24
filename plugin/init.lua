@@ -29,6 +29,7 @@ local function get_require_path()
 		end
 	end
 	wezterm.log_error("Could not find plugin directory")
+	return ""
 end
 
 --- adds the wezterm plugin directory to the lua path
