@@ -41,19 +41,19 @@ function pub.get_default_fuzzy_load_opts()
 		fmt_workspace = function(label)
 			return wezterm.format({
 				{ Foreground = { AnsiColor = "Green" } },
-				{ Text = "󱂬 : " .. label:gsub("%.json$", "") },
+				{ Text = "󱂬 : " .. label:gsub("%.json", "") },
 			})
 		end,
 		fmt_window = function(label)
 			return wezterm.format({
 				{ Foreground = { AnsiColor = "Yellow" } },
-				{ Text = " : " .. label:gsub("%.json$", "") },
+				{ Text = " : " .. label:gsub("%.json", "") },
 			})
 		end,
 		fmt_tab = function(label)
 			return wezterm.format({
 				{ Foreground = { AnsiColor = "Red" } },
-				{ Text = "󰓩 : " .. label:gsub("%.json$", "") },
+				{ Text = "󰓩 : " .. label:gsub("%.json", "") },
 			})
 		end,
 	}
