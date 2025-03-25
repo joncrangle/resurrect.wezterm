@@ -81,9 +81,11 @@ function pub.fuzzy_load(window, pane, callback, opts)
 
 	-- Optimized recursive JSON file finder for all platforms
 	---@param base_path string starting path from which the recursive search takes place
-	---@return string
+	---@return string|nil
 	local function find_json_files_recursive(base_path)
 		local cmd
+		local stdout
+		local suc, err
 
 		if utils.is_windows then
 			-- For Windows, use VBS for better performance and truly invisible execution
@@ -134,46 +136,33 @@ function pub.fuzzy_load(window, pane, callback, opts)
 			)
 
 			-- Write the scripts
-			local handle = io.open(temp_vbs, "w")
-			if handle == nil then
-				wezterm.emit("resurrect.error", "Could not create temporary Windows process")
-				return ""
+			suc, err = utils.write_file(temp_vbs, vbs_script)
+			if not suc then
+				wezterm.emit("resurrect.error", err)
+				return nil
 			end
-			handle:write(vbs_script)
-			handle:close()
 
-			handle = io.open(launcher_vbs, "w")
-			if handle == nil then
-				wezterm.emit("resurrect.error", "Could not create launcher script")
-				return ""
+			suc, err = utils.write_file(launcher_vbs, launcher_script)
+			if not suc then
+				wezterm.emit("resurrect.error", err)
+				return nil
 			end
-			handle:write(launcher_script)
-			handle:close()
-
 			-- Execute using launcher (completely hidden)
 			os.execute("wscript.exe //nologo " .. launcher_vbs)
 
-			-- Read results
-			handle = io.open(temp_out, "r")
-			if handle == nil then
-				wezterm.emit("resurrect.error", "Could not open temporary Windows process output")
-				return ""
-			end
-
-			local stdout = handle:read("*a")
-			if stdout == nil then
-				wezterm.emit("resurrect.error", "The Windows process had no output")
-				return ""
-			end
-
-			handle:close()
+			stdout, suc, err = utils.read_file(temp_out)
 
 			-- Clean up temp files
 			os.remove(temp_vbs)
 			os.remove(launcher_vbs)
 			os.remove(temp_out)
 
-			return stdout
+			if suc then
+				return stdout
+			else
+				wezterm.emit("resurrect.error", err)
+				return nil
+			end
 		elseif utils.is_mac then
 			-- macOS recursive find command for JSON files
 			cmd = 'find "' .. base_path .. '" -type f -name "*.json" -print0 | xargs -0 stat -f "%m %N"'
@@ -186,21 +175,14 @@ function pub.fuzzy_load(window, pane, callback, opts)
 		end
 
 		-- Execute the command and capture stdout for non-Windows
-		local handle = io.popen(cmd)
-		if handle == nil then
-			wezterm.emit("resurrect.error", "Could not open process: " .. cmd)
-			return ""
+		stdout, suc, err = utils.execute(cmd)
+
+		if suc then
+			return stdout
+		else
+			wezterm.emit("resurrect.error", err)
+			return nil
 		end
-
-		local stdout = handle:read("*a")
-		if stdout == nil then
-			wezterm.emit("resurrect.error", "No output when running: " .. cmd)
-			return ""
-		end
-
-		handle:close()
-
-		return stdout
 	end
 
 	-- build a table with the output of the file finder function
@@ -209,9 +191,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 		local max_length = 0
 
 		local stdout = find_json_files_recursive(folder)
-		if stdout == "" then
-			return
-		else
+		if stdout then
 			-- Parse the stdout and construct the file table
 			for line in stdout:gmatch("[^\n]+") do
 				local epoch, type, file = line:match("%s*(%d+)%s+.+[/\\]([^/\\]+)[/\\]([^/\\]+%.json)$")
@@ -249,6 +229,8 @@ function pub.fuzzy_load(window, pane, callback, opts)
 					})
 				end
 			end
+		else
+			return nil
 		end
 
 		-- simulate static values for `format_label`
