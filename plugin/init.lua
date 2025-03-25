@@ -7,7 +7,7 @@ local is_windows = wezterm.target_triple == "x86_64-pc-windows-msvc"
 local separator = is_windows and "\\" or "/"
 
 --- Returns the name of the package, used when requiring modules
---- @return string
+--- @return string|nil
 local function get_require_path()
 	local paths = {
 		"httpssCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDswezterm",
@@ -23,7 +23,6 @@ local function get_require_path()
 		end
 	end
 	wezterm.log_error("Could not find plugin directory")
-	return ""
 end
 
 --- adds the wezterm plugin directory to the lua path
