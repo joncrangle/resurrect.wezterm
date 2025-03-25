@@ -10,16 +10,10 @@ local separator = is_windows and "\\" or "/"
 --- @return string
 local function get_require_path()
 	local paths = {
-		-- MLFlexer repo
 		"httpssCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDswezterm",
 		"httpssCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDsweztermsZs",
 		"httpsCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDswezterm",
 		"httpsCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDsweztermsZs",
-		-- chrisgve repo
-		"httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDswezterm",
-		"httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDsweztermsZs",
-		"httpsCssZssZsgithubsDscomsZschrisgvesZsresurrectsDswezterm",
-		"httpsCssZssZsgithubsDscomsZschrisgvesZsresurrectsDsweztermsZs",
 	}
 	for _, path in ipairs(paths) do
 		for _, plugin in ipairs(wezterm.plugin.list()) do
