@@ -44,4 +44,69 @@ function utils.utf8len(str)
 	return len
 end
 
+-- Write a file with the content of a string
+---@param file_path string full filename
+---@param str string string to be Write
+---@return boolean success result
+---@return string|nil error
+function utils.write_file(file_path, str)
+	local suc, err = pcall(function()
+		local handle = io.open(file_path, "w+")
+		if not handle then
+			error("Could not open file: " .. file_path)
+		end
+		handle:write(str)
+		handle:flush()
+		handle:close()
+	end)
+	return suc, err
+end
+
+-- Read a file and return its content
+---@param file_path string full filename
+---@return string content file content
+---@return boolean success result
+---@return string|nil error
+function utils.read_file(file_path)
+	local stdout
+	local suc, err = pcall(function()
+		local handle = io.open(file_path, "r")
+		if not handle then
+			error("Could not open file: " .. file_path)
+		end
+		stdout = handle:read("*a")
+		handle:close()
+	end)
+	if suc then
+		return stdout, true
+	else
+		return "", suc, err
+	end
+end
+
+-- Execute a cmd and return its stdout
+---@param cmd string command
+---@return string stdout command result
+---@return boolean success result
+---@return string|nil error
+function utils.execute(cmd)
+	local stdout
+	local suc, err = pcall(function()
+		local handle = io.popen(cmd)
+		if not handle then
+			error("Could not open process: " .. cmd)
+		end
+		stdout = handle:read("*a")
+		if stdout == nil then
+			error("Error running process: " .. cmd)
+		end
+		handle:close()
+	end)
+	if suc then
+		return stdout, true
+	else
+		return "", suc, err
+	end
+end
+
 return utils
