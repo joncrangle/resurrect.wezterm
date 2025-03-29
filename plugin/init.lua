@@ -10,6 +10,12 @@ local separator = is_windows and "\\" or "/"
 --- @return string|nil
 local function get_require_path()
 	local paths = {
+		-- chrisgve
+		"httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDswezterm",
+		"httpssCssZssZsgithubsDscomsZschrisgvesZsresurrectsDsweztermsZs",
+		"httpsCssZssZsgithubsDscomsZschrisgvesZsresurrectsDswezterm",
+		"httpsCssZssZsgithubsDscomsZschrisgvesZsresurrectsDsweztermsZs",
+		-- MLFlexer
 		"httpssCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDswezterm",
 		"httpssCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDsweztermsZs",
 		"httpsCssZssZsgithubsDscomsZsMLFlexersZsresurrectsDswezterm",
