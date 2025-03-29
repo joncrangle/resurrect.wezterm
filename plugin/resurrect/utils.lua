@@ -113,14 +113,12 @@ end
 
 -- Create the folder if it does not exist
 ---@param path string
----@return string folder
 function utils.ensure_folder_exists(path)
 	if utils.is_windows then
 		os.execute('mkdir /p "' .. path:gsub("/", "\\" .. '"'))
 	else
 		os.execute('mkdir -p "' .. path .. '"')
 	end
-	return path
 end
 
 return utils

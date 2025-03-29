@@ -148,7 +148,11 @@ end
 ---Changes the directory to save the state to
 ---@param directory string
 function pub.change_state_save_dir(directory)
-	pub.save_state_dir = utils.ensure_folder_exists(directory)
+	local types = { "workspace", "window", "tab" }
+	for _, type in ipairs(types) do
+		utils.ensure_folder_exists(directory .. "/" .. type)
+	end
+	pub.save_state_dir = directory
 end
 
 function pub.set_max_nlines(max_nlines)
