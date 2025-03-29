@@ -6,6 +6,8 @@ utils.is_windows = wezterm.target_triple == "x86_64-pc-windows-msvc"
 utils.is_mac = (wezterm.target_triple == "x86_64-apple-darwin" or wezterm.target_triple == "aarch64-apple-darwin")
 utils.separator = utils.is_windows and "\\" or "/"
 
+local constants = require("utils.constants")
+
 -- Helper function to remove formatting sequence in strings
 ---@param str string
 ---@return string
@@ -107,6 +109,18 @@ function utils.execute(cmd)
 	else
 		return "", suc, err
 	end
+end
+
+-- Create the folder if it does not exist
+---@param path string
+---@return string folder
+function utils.ensure_folder_exists(path)
+	if utils.is_windows then
+		os.execute('mkdir /p "' .. path:gsub("/", "\\" .. '"'))
+	else
+		os.execute('mkdir -p "' .. path .. '"')
+	end
+	return path
 end
 
 return utils

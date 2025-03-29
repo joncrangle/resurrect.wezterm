@@ -148,7 +148,7 @@ end
 ---Changes the directory to save the state to
 ---@param directory string
 function pub.change_state_save_dir(directory)
-	pub.save_state_dir = directory
+	pub.save_state_dir = utils.ensure_folder_exists(directory)
 end
 
 function pub.set_max_nlines(max_nlines)
