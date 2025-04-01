@@ -145,11 +145,11 @@ local function find_json_files_recursive(base_path)
 		end
 	elseif utils.is_mac then
 		-- macOS recursive find command for JSON files
-		cmd = 'find "' .. base_path .. '" -type f -name "*.json" -print0 | xargs -0 stat -f "%m %N"'
+		cmd = 'find "' .. base_path .. '" -type f -name "*.json" -wezterm.log_info0 | xargs -0 stat -f "%m %N"'
 	else
 		-- Linux optimized recursive find command for JSON files
 		cmd = string.format(
-			'find "$(realpath %q)" -type f -name "*.json" -printf "%%T@ %%p\\n" | awk \'{split($1, a, "."); print a[1], $2}\'',
+			'find "$(realpath %q)" -type f -name "*.json" -wezterm.log_infof "%%T@ %%p\\n" | awk \'{split($1, a, "."); print a[1], $2}\'',
 			base_path
 		)
 	end
@@ -318,7 +318,7 @@ local function insert_choices(stdout, opts)
 					end
 				end
 			end
-			print(fmt_cost)
+			wezterm.log_info(fmt_cost)
 
 			-- Calculating the maximum file length
 			max_length = math.max(max_length, utf8len(file) + fmt_cost[type])
@@ -333,7 +333,7 @@ local function insert_choices(stdout, opts)
 			})
 		end
 	end
-	print(files)
+	wezterm.log_info(files)
 
 	-- During the selection view, InputSelector will take 4 characters on the left and 2 characters
 	-- on the right of the window
@@ -361,7 +361,7 @@ local function insert_choices(stdout, opts)
 					-- consider the length of the formatted date section
 					if opts.show_state_with_date then
 						if opts.fmt_date then
-							print('"' .. opts.fmt_date(file.date) .. '"')
+							wezterm.log_info('"' .. opts.fmt_date(file.date) .. '"')
 							estimated_length = utf8len(strip_format_esc_seq(opts.fmt_date(file.date))) + 2 -- for the separators
 						else
 							estimated_length = utf8len(file.date)
@@ -424,14 +424,14 @@ function pub.fuzzy_load(window, pane, callback, opts)
 	wezterm.emit("resurrect.fuzzy_loader.fuzzy_load.start", window, pane)
 
 	opts = utils.tbl_deep_extend("force", pub.default_fuzzy_load_opts, opts or {})
-	print(opts)
+	wezterm.log_info(opts)
 
 	local folder = require("resurrect.state_manager").save_state_dir
-	print(folder)
+	wezterm.log_info(folder)
 
 	-- Always use the recursive search function
 	local stdout = find_json_files_recursive(folder)
-	print(stdout)
+	wezterm.log_info(stdout or "")
 
 	str_pad = opts.name_truncature or "..."
 	pad_len = utf8len(str_pad)
