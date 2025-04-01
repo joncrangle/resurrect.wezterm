@@ -267,6 +267,8 @@ local function insert_choices(stdout, opts)
 	-- Add files to state_files list and apply the formatting functions
 	for _, type in ipairs(types) do
 		for _, file in ipairs(files[type]) do
+			local overflow_chars = overall_overflow_chars
+
 			file.label = file.filename
 			file.dots = ""
 			file.date = ""
@@ -283,14 +285,14 @@ local function insert_choices(stdout, opts)
 						0,
 						math.min( -- the length of the dotted line is bound by the number of overflow_chars we might have to save
 							max_length - file.filename_len - 1,
-							max_length - file.filename_len - 1 - overall_overflow_chars
+							max_length - file.filename_len - 1 - overflow_chars
 						)
 					)
 				)
 				-- we correct the number of overflow_chars with what could be reduced from the dots
 				-- max_length - file.filename_len - 1 is the length of dots we should have had if we had
 				-- enough space
-				local overflow_chars = overall_overflow_chars - ((max_length - file.filename_len - 1) - #file.dots)
+				overflow_chars = overflow_chars - ((max_length - file.filename_len - 1) - #file.dots)
 				file.dots = " " .. file.dots .. " " -- adding the padding around the dots
 			end
 
