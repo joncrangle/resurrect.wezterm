@@ -318,6 +318,7 @@ local function insert_choices(stdout, opts)
 					end
 				end
 			end
+			print(fmt_cost)
 
 			-- Calculating the maximum file length
 			max_length = math.max(max_length, utf8len(file) + fmt_cost[type])
@@ -332,6 +333,7 @@ local function insert_choices(stdout, opts)
 			})
 		end
 	end
+	print(files)
 
 	-- During the selection view, InputSelector will take 4 characters on the left and 2 characters
 	-- on the right of the window
@@ -352,8 +354,6 @@ local function insert_choices(stdout, opts)
 				else
 					file.date = ""
 				end
-				print(file.epoch)
-				print(file.date)
 
 				-- determines whether we need to manage content to fit the screen, we run this only once
 				if must_shrink == nil then
@@ -424,11 +424,14 @@ function pub.fuzzy_load(window, pane, callback, opts)
 	wezterm.emit("resurrect.fuzzy_loader.fuzzy_load.start", window, pane)
 
 	opts = utils.tbl_deep_extend("force", pub.default_fuzzy_load_opts, opts or {})
+	print(opts)
 
 	local folder = require("resurrect.state_manager").save_state_dir
+	print(folder)
 
 	-- Always use the recursive search function
 	local stdout = find_json_files_recursive(folder)
+	print(stdout)
 
 	str_pad = opts.name_truncature or "..."
 	pad_len = utf8len(str_pad)
