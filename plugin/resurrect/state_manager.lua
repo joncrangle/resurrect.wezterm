@@ -97,7 +97,7 @@ end
 ---@return string|nil
 function pub.write_current_state(name, type)
 	local file_path = pub.save_state_dir .. utils.separator .. "current_state"
-	local suc, err = utils.write_file(file_path, string.format("%s\n%s", name, type))
+	local suc, err = file_io.write_file(file_path, string.format("%s\n%s", name, type))
 	return suc, err
 end
 

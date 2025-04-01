@@ -1,5 +1,6 @@
 local wezterm = require("wezterm") --[[@as Wezterm]] --- this type cast invokes the LSP module for Wezterm
 local utils = require("resurrect.utils")
+local file_io = require("resurrect.file_io")
 local strip_format_esc_seq = utils.strip_format
 local utf8len = utils.utf8len
 local pub = {}
@@ -116,21 +117,22 @@ local function find_json_files_recursive(base_path)
 		)
 
 		-- Write the scripts
-		suc, err = utils.write_file(temp_vbs, vbs_script)
+		suc, err = file_io.write_file(temp_vbs, vbs_script)
 		if not suc then
 			wezterm.emit("resurrect.error", err)
-			return nil
+			return
 		end
 
-		suc, err = utils.write_file(launcher_vbs, launcher_script)
+		suc, err = file_io.write_file(launcher_vbs, launcher_script)
 		if not suc then
 			wezterm.emit("resurrect.error", err)
-			return nil
+			os.remove(temp_vbs) -- by the time we are here the `temb_vbs` file already exists so we should clean up
+			return
 		end
 		-- Execute using launcher (completely hidden)
 		os.execute("wscript.exe //nologo " .. launcher_vbs)
 
-		stdout, suc, err = utils.read_file(temp_out)
+		suc, stdout = file_io.read_file(temp_out)
 
 		-- Clean up temp files
 		os.remove(temp_vbs)
@@ -140,8 +142,8 @@ local function find_json_files_recursive(base_path)
 		if suc then
 			return stdout
 		else
-			wezterm.emit("resurrect.error", err)
-			return nil
+			wezterm.emit("resurrect.error", stdout)
+			return
 		end
 	elseif utils.is_mac then
 		-- macOS recursive find command for JSON files
@@ -161,7 +163,7 @@ local function find_json_files_recursive(base_path)
 		return stdout
 	else
 		wezterm.emit("resurrect.error", err)
-		return nil
+		return
 	end
 end
 
