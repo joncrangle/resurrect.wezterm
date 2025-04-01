@@ -175,7 +175,6 @@ local function insert_choices(stdout, opts)
 		tab = {},
 	}
 	local max_length = 0
-	local max_length_raw = 0
 
 	if stdout == nil then
 		return state_files
@@ -229,7 +228,6 @@ local function insert_choices(stdout, opts)
 			-- Calculating the maximum file length
 			local filename_len = utf8len(file) -- we keep this so we don't have to measure it later
 			max_length = math.max(max_length, filename_len + fmt_cost[type])
-			max_length_raw = math.max(max_length_raw, filename_len)
 
 			-- collecting all relevant information about the file
 			local fmt = opts[string.format("fmt_%s", type)]
@@ -250,10 +248,9 @@ local function insert_choices(stdout, opts)
 
 	wezterm.log_info("screen width", width)
 	wezterm.log_info("max length", max_length)
-	wezterm.log_info("max length raw", max_length_raw)
-	wezterm.log_info("total cost ws", max_length_raw + fmt_cost.workspace + fmt_cost.str_date + fmt_cost.fmt_date)
-	wezterm.log_info("total cost wn", max_length_raw + fmt_cost.window + fmt_cost.str_date + fmt_cost.fmt_date)
-	wezterm.log_info("total cost tb", max_length_raw + fmt_cost.tab + fmt_cost.str_date + fmt_cost.fmt_date)
+	wezterm.log_info("total cost ws", max_length + fmt_cost.workspace + fmt_cost.str_date + fmt_cost.fmt_date)
+	wezterm.log_info("total cost wn", max_length + fmt_cost.window + fmt_cost.str_date + fmt_cost.fmt_date)
+	wezterm.log_info("total cost tb", max_length + fmt_cost.tab + fmt_cost.str_date + fmt_cost.fmt_date)
 
 	if opts.ignore_screen_width then
 		must_shrink = false
@@ -267,11 +264,11 @@ local function insert_choices(stdout, opts)
 			if must_shrink == nil then
 				local total_length = max_length + fmt_cost.str_date + fmt_cost.fmt_date
 				if total_length > width then
-					overflow_chars = total_length - width
 					must_shrink = true
 				else
 					must_shrink = false
 				end
+				overflow_chars = total_length - width
 			end
 
 			file.label = file.filename
