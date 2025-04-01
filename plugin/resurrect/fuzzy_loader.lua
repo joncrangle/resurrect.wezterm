@@ -282,6 +282,7 @@ local function insert_choices(stdout, opts)
 		tab = {},
 	}
 	local max_length = 0
+	local max_length_raw = 0
 
 	if stdout == nil then
 		return state_files
@@ -304,9 +305,12 @@ local function insert_choices(stdout, opts)
 			-- the cost of formatting per type
 			--
 			if next(fmt_cost) == nil then
-				fmt_cost.workspace = 0
-				fmt_cost.window = 0
-				fmt_cost.tab = 0
+				fmt_cost.workspace = 0 -- cost of formatting the workspace name
+				fmt_cost.window = 0 -- cost of formatting the window name
+				fmt_cost.tab = 0 -- cost of formatting the tab
+				fmt_cost.str_date = 0 -- cost of date as a string
+				fmt_cost.fmt_date = 0 -- cost of formatting the date
+				-- Calculate the cost for formatting the filename
 				local len = utf8len(file)
 				for _, t in ipairs(types) do
 					if not opts[string.format("ignore_%ss", t)] then
@@ -316,10 +320,21 @@ local function insert_choices(stdout, opts)
 						end
 					end
 				end
+				-- Calculate the cost for formatting the date
+				if opts.show_state_with_date then
+					local str_date = os.date(opts.date_format, tonumber(epoch))
+					fmt_cost.str_date = utf8len(str_date)
+					if opts.fmt_date then
+						fmt_cost.fmt_date = utf8len(utils.strip_format_esc_seq(opts.fmt_date(str_date)))
+							- fmt_cost.str_date
+					end
+				end
+				wezterm.log_info(fmt_cost)
 			end
 
 			-- Calculating the maximum file length
 			max_length = math.max(max_length, utf8len(file) + fmt_cost[type])
+			max_length_raw = math.max(max_length_raw, utf8len(file))
 
 			-- collecting all relevant information about the file
 			local fmt = opts[string.format("fmt_%s", type)]
@@ -336,6 +351,13 @@ local function insert_choices(stdout, opts)
 	-- on the right of the window
 	local width = utils.get_current_window_width() - 4
 	local must_shrink = nil
+
+	wezterm.log_info("screen width", width)
+	wezterm.log_info("max length", max_length)
+	wezterm.log_info("max length raw", max_length_raw)
+	wezterm.log_info("total cost ws", max_length_raw + fmt_cost.workspace + fmt_cost.str_date + fmt_cost.fmt_date)
+	wezterm.log_info("total cost wn", max_length_raw + fmt_cost.window + fmt_cost.str_date + fmt_cost.fmt_date)
+	wezterm.log_info("total cost tb", max_length_raw + fmt_cost.tab + fmt_cost.str_date + fmt_cost.fmt_date)
 
 	if opts.ignore_screen_width then
 		must_shrink = false
