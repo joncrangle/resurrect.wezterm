@@ -420,6 +420,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 	wezterm.emit("resurrect.fuzzy_loader.fuzzy_load.start", window, pane)
 
 	opts = utils.tbl_deep_extend("force", pub.default_fuzzy_load_opts, opts or {})
+	print(opts)
 
 	local folder = require("resurrect.state_manager").save_state_dir
 
