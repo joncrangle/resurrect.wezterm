@@ -292,7 +292,7 @@ local function insert_choices(stdout, opts)
 		-- MacOS it is from January 1st, 1904 0 UTC
 		-- Windows NTFS (up to Win 11) it is from January 1st, 1601 0 UTC
 		-- The function `os.date()` used later on will convert the date according to the host OS
-		if epoch and file and type then
+		if epoch and file and type and not opts[string.format("ignore_%ss", type)] then
 			-- consider the "cost" of the formatting of the filename, i.e., if the format function adds characters
 			-- to the visible part of the file section, we test the three possible formatter to get the highest cost
 			-- we use a real entry instead of an empty string to prevent formatting error if the format function has
@@ -306,9 +306,11 @@ local function insert_choices(stdout, opts)
 				fmt_cost.tab = 0
 				local len = utf8len(file)
 				for _, t in ipairs(types) do
-					local fmt = opts[string.format("fmt_%s", t)]
-					if fmt then
-						fmt_cost[type] = utf8len(fmt(file)) - len
+					if not opts[string.format("ignore_%ss", t)] then
+						local fmt = opts[string.format("fmt_%s", t)]
+						if fmt then
+							fmt_cost[type] = utf8len(fmt(file)) - len
+						end
 					end
 				end
 			end
@@ -339,8 +341,7 @@ local function insert_choices(stdout, opts)
 
 	-- Add files to state_files list and apply the formatting functions
 	for _, type in ipairs(types) do
-		local include = not opts[string.format("ignore_%ss", type)]
-		if include then
+		if not opts[string.format("ignore_%ss", type)] then
 			for _, file in ipairs(files) do
 				if file.type == type then
 					local label = ""
