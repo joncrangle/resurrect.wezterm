@@ -209,7 +209,7 @@ local function insert_choices(stdout, opts)
 					if not opts[string.format("ignore_%ss", t)] then
 						local fmt = opts[string.format("fmt_%s", t)]
 						if fmt then
-							fmt_cost[t] = utf8len(fmt(file)) - len
+							fmt_cost[t] = utf8len(utils.strip_format_esc_seq(fmt(file))) - len
 							wezterm.log_info(t, fmt(file))
 						end
 					end
@@ -245,7 +245,7 @@ local function insert_choices(stdout, opts)
 
 	-- During the selection view, InputSelector will take 4 characters on the left and 2 characters
 	-- on the right of the window
-	local width = utils.get_current_window_width() - 4
+	local width = utils.get_current_window_width() - 6
 	local must_shrink = nil
 
 	wezterm.log_info("screen width", width)
@@ -265,20 +265,18 @@ local function insert_choices(stdout, opts)
 			-- determines whether we need to manage content to fit the screen, we run this only once
 			local overflow_chars = 0
 			if must_shrink == nil then
-				local estimated_length = max_length + fmt_cost.str_date + fmt_cost.fmt_date
-				if estimated_length > width then
-					overflow_chars = estimated_length - width
+				local total_length = max_length + fmt_cost.str_date + fmt_cost.fmt_date
+				if total_length > width then
+					overflow_chars = total_length - width
 					must_shrink = true
 				else
 					must_shrink = false
 				end
 			end
 
-			file.date = ""
-			file.label = ""
-			file.dots = ""
-
 			file.label = file.filename
+			file.dots = ""
+			file.date = ""
 
 			if opts.show_state_with_date then
 				file.date = os.date(opts.date_format, tonumber(file.epoch))
