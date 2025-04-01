@@ -403,6 +403,7 @@ local function insert_choices(stdout, opts)
 					end
 				end
 				table.insert(state_files, { id = file.id, label = label })
+				wezterm.log_info(#label, utf8len(label), label)
 			end
 		end
 	end
