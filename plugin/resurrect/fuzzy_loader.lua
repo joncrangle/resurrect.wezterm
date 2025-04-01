@@ -244,33 +244,29 @@ local function insert_choices(stdout, opts)
 	-- During the selection view, InputSelector will take 4 characters on the left and 2 characters
 	-- on the right of the window
 	local width = utils.get_current_window_width() - 6
-	local must_shrink = nil
+
+	local overall_overflow_chars = 0
+	if not opts.ignore_screen_width then
+		-- determines whether we need to manage content to fit the screen
+		local total_length = max_length + fmt_cost.str_date + fmt_cost.fmt_date
+		-- if total_length > width then
+		-- 	must_shrink = true
+		-- else
+		-- 	must_shrink = false
+		-- end
+		overall_overflow_chars = total_length - width
+	end
 
 	wezterm.log_info("screen width", width)
 	wezterm.log_info("max length", max_length)
 	wezterm.log_info("total cost ws", max_length + fmt_cost.workspace + fmt_cost.str_date + fmt_cost.fmt_date)
 	wezterm.log_info("total cost wn", max_length + fmt_cost.window + fmt_cost.str_date + fmt_cost.fmt_date)
 	wezterm.log_info("total cost tb", max_length + fmt_cost.tab + fmt_cost.str_date + fmt_cost.fmt_date)
-
-	if opts.ignore_screen_width then
-		must_shrink = false
-	end
+	wezterm.log_info("Overall overflow", overall_overflow_chars)
 
 	-- Add files to state_files list and apply the formatting functions
 	for _, type in ipairs(types) do
 		for _, file in ipairs(files[type]) do
-			-- determines whether we need to manage content to fit the screen, we run this only once
-			local overflow_chars = 0
-			if must_shrink == nil then
-				local total_length = max_length + fmt_cost.str_date + fmt_cost.fmt_date
-				if total_length > width then
-					must_shrink = true
-				else
-					must_shrink = false
-				end
-				overflow_chars = total_length - width
-			end
-
 			file.label = file.filename
 			file.dots = ""
 			file.date = ""
@@ -287,14 +283,14 @@ local function insert_choices(stdout, opts)
 						0,
 						math.min( -- the length of the dotted line is bound by the number of overflow_chars we might have to save
 							max_length - file.filename_len - 1,
-							max_length - file.filename_len - 1 - overflow_chars
+							max_length - file.filename_len - 1 - overall_overflow_chars
 						)
 					)
 				)
 				-- we correct the number of overflow_chars with what could be reduced from the dots
 				-- max_length - file.filename_len - 1 is the length of dots we should have had if we had
 				-- enough space
-				overflow_chars = overflow_chars - ((max_length - file.filename_len - 1) - #file.dots)
+				local overflow_chars = overall_overflow_chars - ((max_length - file.filename_len - 1) - #file.dots)
 				file.dots = " " .. file.dots .. " " -- adding the padding around the dots
 			end
 
