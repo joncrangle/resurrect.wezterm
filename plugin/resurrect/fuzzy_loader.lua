@@ -350,6 +350,8 @@ local function insert_choices(stdout, opts)
 					else
 						file.date = ""
 					end
+					print(file.epoch)
+					print(file.date)
 
 					-- determines whether we need to manage content to fit the screen, we run this only once
 					if must_shrink == nil then
@@ -357,6 +359,7 @@ local function insert_choices(stdout, opts)
 						-- consider the length of the formatted date section
 						if opts.show_state_with_date then
 							if opts.fmt_date then
+								print('"' .. opts.fmt_date(file.date) .. '"')
 								estimated_length = utf8len(strip_format_esc_seq(opts.fmt_date(file.date))) + 2 -- for the separators
 							else
 								estimated_length = utf8len(file.date)
@@ -420,12 +423,10 @@ function pub.fuzzy_load(window, pane, callback, opts)
 	wezterm.emit("resurrect.fuzzy_loader.fuzzy_load.start", window, pane)
 
 	opts = utils.tbl_deep_extend("force", pub.default_fuzzy_load_opts, opts or {})
-	print(opts)
 
 	local folder = require("resurrect.state_manager").save_state_dir
 
 	local stdout = find_json_files_recursive(folder)
-	print(stdout)
 
 	str_pad = opts.name_truncature or "..."
 	pad_len = utf8len(str_pad)
