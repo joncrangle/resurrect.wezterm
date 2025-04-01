@@ -277,7 +277,11 @@ local function insert_choices(stdout, opts)
 	-- pre-calculation of formatting cost
 	local types = { "workspace", "window", "tab" }
 	local state_files = {}
-	local files = {}
+	local files = {
+		workspace = {},
+		window = {},
+		tab = {},
+	}
 	local max_length = 0
 
 	if stdout == nil then
@@ -320,12 +324,11 @@ local function insert_choices(stdout, opts)
 
 			-- collecting all relevant information about the file
 			local fmt = opts[string.format("fmt_%s", type)]
-			table.insert(files, {
+			table.insert(files[type], {
 				id = type .. utils.separator .. file,
 				filename = file,
 				epoch = epoch,
 				fmt = fmt,
-				type = type,
 			})
 		end
 	end
@@ -341,72 +344,70 @@ local function insert_choices(stdout, opts)
 
 	-- Add files to state_files list and apply the formatting functions
 	for _, type in ipairs(types) do
-		if not opts[string.format("ignore_%ss", type)] then
-			for _, file in ipairs(files) do
-				if file.type == type then
-					local label = ""
+		for _, file in ipairs(files[type]) do
+			if file.type == type then
+				local label = ""
+				if opts.show_state_with_date then
+					file.date = os.date(opts.date_format, tonumber(file.epoch))
+				else
+					file.date = ""
+				end
+				print(file.epoch)
+				print(file.date)
+
+				-- determines whether we need to manage content to fit the screen, we run this only once
+				if must_shrink == nil then
+					local estimated_length = 0
+					-- consider the length of the formatted date section
 					if opts.show_state_with_date then
-						file.date = os.date(opts.date_format, tonumber(file.epoch))
-					else
-						file.date = ""
-					end
-					print(file.epoch)
-					print(file.date)
-
-					-- determines whether we need to manage content to fit the screen, we run this only once
-					if must_shrink == nil then
-						local estimated_length = 0
-						-- consider the length of the formatted date section
-						if opts.show_state_with_date then
-							if opts.fmt_date then
-								print('"' .. opts.fmt_date(file.date) .. '"')
-								estimated_length = utf8len(strip_format_esc_seq(opts.fmt_date(file.date))) + 2 -- for the separators
-							else
-								estimated_length = utf8len(file.date)
-							end
-						end
-						-- the longest prompt is derived from the maximum length of the formatted filename
-						estimated_length = estimated_length + max_length
-						if estimated_length > width then
-							must_shrink = true
+						if opts.fmt_date then
+							print('"' .. opts.fmt_date(file.date) .. '"')
+							estimated_length = utf8len(strip_format_esc_seq(opts.fmt_date(file.date))) + 2 -- for the separators
 						else
-							must_shrink = false
+							estimated_length = utf8len(file.date)
 						end
 					end
-
-					if must_shrink then
-						-- we must ensure that the line fits within the width of the screen,
-						-- thus we invoke `format_label` which will take care of this for us
-						-- as smartly as possible
-						table.insert(state_files, { id = file.id, label = format_label(width, file, max_length, opts) })
+					-- the longest prompt is derived from the maximum length of the formatted filename
+					estimated_length = estimated_length + max_length
+					if estimated_length > width then
+						must_shrink = true
 					else
-						if opts.show_state_with_date then
-							if utf8len(file.filename) < max_length then
-								label = " " .. string.rep(".", max_length - utf8len(file.filename) - 1) .. " "
-							else
-								label = " "
-							end
-
-							if file.fmt then
-								label = file.fmt(file.filename .. label)
-							else
-								label = file.filename .. label
-							end
-
-							if opts.fmt_date then
-								label = label .. opts.fmt_date(file.date)
-							else
-								label = label .. file.date
-							end
-						else
-							if file.fmt then
-								label = file.fmt(file.filename)
-							else
-								label = file.filename
-							end
-						end
-						table.insert(state_files, { id = file.id, label = label })
+						must_shrink = false
 					end
+				end
+
+				if must_shrink then
+					-- we must ensure that the line fits within the width of the screen,
+					-- thus we invoke `format_label` which will take care of this for us
+					-- as smartly as possible
+					table.insert(state_files, { id = file.id, label = format_label(width, file, max_length, opts) })
+				else
+					if opts.show_state_with_date then
+						if utf8len(file.filename) < max_length then
+							label = " " .. string.rep(".", max_length - utf8len(file.filename) - 1) .. " "
+						else
+							label = " "
+						end
+
+						if file.fmt then
+							label = file.fmt(file.filename .. label)
+						else
+							label = file.filename .. label
+						end
+
+						if opts.fmt_date then
+							label = label .. opts.fmt_date(file.date)
+						else
+							label = label .. file.date
+						end
+					else
+						if file.fmt then
+							label = file.fmt(file.filename)
+						else
+							label = file.filename
+						end
+					end
+					table.insert(state_files, { id = file.id, label = label })
 				end
 			end
 		end
@@ -426,13 +427,14 @@ function pub.fuzzy_load(window, pane, callback, opts)
 
 	local folder = require("resurrect.state_manager").save_state_dir
 
+	-- Always use the recursive search function
 	local stdout = find_json_files_recursive(folder)
 
 	str_pad = opts.name_truncature or "..."
 	pad_len = utf8len(str_pad)
 	min_filename_len = opts.min_filename_size or 10 -- minimum size of the filename to remain decypherable
 
-	-- Always use the recursive search function
+	-- build the choice list for the InputSelector
 	local state_files = insert_choices(stdout, opts)
 
 	if #state_files == 0 then
