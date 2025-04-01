@@ -4,6 +4,44 @@ local pub = {
 	encryption = { enable = false },
 }
 
+-- Write a file with the content of a string
+---@param file_path string full filename
+---@return boolean success result
+---@return string|nil error
+function pub.write_file(file_path, str)
+	local suc, err = pcall(function()
+		local handle = io.open(file_path, "w+")
+		if not handle then
+			error("Could not open file: " .. file_path)
+		end
+		handle:write(str)
+		handle:flush()
+		handle:close()
+	end)
+	return suc, err
+end
+
+-- Read a file and return its content
+---@param file_path string full filename
+---@return boolean success result
+---@return string|nil error
+function pub.read_file(file_path)
+	local stdout
+	local suc, err = pcall(function()
+		local handle = io.open(file_path, "r")
+		if not handle then
+			error("Could not open file: " .. file_path)
+		end
+		stdout = handle:read("*a")
+		handle:close()
+	end)
+	if suc then
+		return suc, stdout
+	else
+		return suc, err
+	end
+end
+
 --- Merges user-supplied options with default options
 --- @param user_opts encryption_opts
 function pub.set_encryption(user_opts)
@@ -47,11 +85,7 @@ function pub.write_state(file_path, state, event_type)
 			wezterm.emit("resurrect.file_io.encrypt.finished", file_path)
 		end
 	else
-		local ok, err = pcall(function()
-			local file = assert(io.open(file_path, "w"))
-			file:write(json_state)
-			file:close()
-		end)
+		local ok, err = pub.write_file(file_path, json_state)
 		if not ok then
 			wezterm.emit("resurrect.error", "Failed to write state: " .. err)
 			wezterm.log_error("Failed to write state: " .. err)
