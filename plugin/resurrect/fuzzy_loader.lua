@@ -145,7 +145,7 @@ local function find_json_files_recursive(base_path)
 		end
 	elseif utils.is_mac then
 		-- macOS recursive find command for JSON files
-		cmd = 'find "' .. base_path .. '" -type f -name "*.json" -print0 | xargs -0 stat -f "%m %N"'
+		cmd = 'find "' .. base_path .. '" -type f -name "*.json" -0rint0 | xargs -0 stat -f "%m %N"'
 	else
 		-- Linux optimized recursive find command for JSON files
 		cmd = string.format(
@@ -304,6 +304,7 @@ local function insert_choices(stdout, opts)
 			-- This prevent from having to format every filename, instead we can take the filename length and then
 			-- the cost of formatting per type
 			--
+			wezterm.log_info(#fmt_cost)
 			if #fmt_cost == 0 then
 				fmt_cost.workspace = 0
 				fmt_cost.window = 0
@@ -313,12 +314,12 @@ local function insert_choices(stdout, opts)
 					if not opts[string.format("ignore_%ss", t)] then
 						local fmt = opts[string.format("fmt_%s", t)]
 						if fmt then
-							fmt_cost[type] = utf8len(fmt(file)) - len
+							fmt_cost[type] = math.max(fmt_cost[type], utf8len(fmt(file)) - len)
+							wezterm.log_info(t, fmt_cost)
 						end
 					end
 				end
 			end
-			wezterm.log_info(fmt_cost)
 
 			-- Calculating the maximum file length
 			max_length = math.max(max_length, utf8len(file) + fmt_cost[type])
@@ -346,69 +347,68 @@ local function insert_choices(stdout, opts)
 
 	-- Add files to state_files list and apply the formatting functions
 	for _, type in ipairs(types) do
+		wezterm.log_info(type, #files[type])
 		for _, file in ipairs(files[type]) do
-			if file.type == type then
-				local label = ""
+			local label = ""
+			if opts.show_state_with_date then
+				file.date = os.date(opts.date_format, tonumber(file.epoch))
+			else
+				file.date = ""
+			end
+
+			-- determines whether we need to manage content to fit the screen, we run this only once
+			if must_shrink == nil then
+				local estimated_length = 0
+				-- consider the length of the formatted date section
 				if opts.show_state_with_date then
-					file.date = os.date(opts.date_format, tonumber(file.epoch))
-				else
-					file.date = ""
-				end
-
-				-- determines whether we need to manage content to fit the screen, we run this only once
-				if must_shrink == nil then
-					local estimated_length = 0
-					-- consider the length of the formatted date section
-					if opts.show_state_with_date then
-						if opts.fmt_date then
-							wezterm.log_info('"' .. opts.fmt_date(file.date) .. '"')
-							estimated_length = utf8len(strip_format_esc_seq(opts.fmt_date(file.date))) + 2 -- for the separators
-						else
-							estimated_length = utf8len(file.date)
-						end
-					end
-					-- the longest prompt is derived from the maximum length of the formatted filename
-					estimated_length = estimated_length + max_length
-					if estimated_length > width then
-						must_shrink = true
+					if opts.fmt_date then
+						wezterm.log_info('"' .. opts.fmt_date(file.date) .. '"')
+						estimated_length = utf8len(strip_format_esc_seq(opts.fmt_date(file.date))) + 2 -- for the separators
 					else
-						must_shrink = false
+						estimated_length = utf8len(file.date)
 					end
 				end
-
-				if must_shrink then
-					-- we must ensure that the line fits within the width of the screen,
-					-- thus we invoke `format_label` which will take care of this for us
-					-- as smartly as possible
-					table.insert(state_files, { id = file.id, label = format_label(width, file, max_length, opts) })
+				-- the longest prompt is derived from the maximum length of the formatted filename
+				estimated_length = estimated_length + max_length
+				if estimated_length > width then
+					must_shrink = true
 				else
-					if opts.show_state_with_date then
-						if utf8len(file.filename) < max_length then
-							label = " " .. string.rep(".", max_length - utf8len(file.filename) - 1) .. " "
-						else
-							label = " "
-						end
-
-						if file.fmt then
-							label = file.fmt(file.filename .. label)
-						else
-							label = file.filename .. label
-						end
-
-						if opts.fmt_date then
-							label = label .. opts.fmt_date(file.date)
-						else
-							label = label .. file.date
-						end
-					else
-						if file.fmt then
-							label = file.fmt(file.filename)
-						else
-							label = file.filename
-						end
-					end
-					table.insert(state_files, { id = file.id, label = label })
+					must_shrink = false
 				end
+			end
+
+			if must_shrink then
+				-- we must ensure that the line fits within the width of the screen,
+				-- thus we invoke `format_label` which will take care of this for us
+				-- as smartly as possible
+				table.insert(state_files, { id = file.id, label = format_label(width, file, max_length, opts) })
+			else
+				if opts.show_state_with_date then
+					if utf8len(file.filename) < max_length then
+						label = " " .. string.rep(".", max_length - utf8len(file.filename) - 1) .. " "
+					else
+						label = " "
+					end
+
+					if file.fmt then
+						label = file.fmt(file.filename .. label)
+					else
+						label = file.filename .. label
+					end
+
+					if opts.fmt_date then
+						label = label .. opts.fmt_date(file.date)
+					else
+						label = label .. file.date
+					end
+				else
+					if file.fmt then
+						label = file.fmt(file.filename)
+					else
+						label = file.filename
+					end
+				end
+				table.insert(state_files, { id = file.id, label = label })
 			end
 		end
 	end
@@ -424,15 +424,11 @@ function pub.fuzzy_load(window, pane, callback, opts)
 	wezterm.emit("resurrect.fuzzy_loader.fuzzy_load.start", window, pane)
 
 	opts = utils.tbl_deep_extend("force", pub.default_fuzzy_load_opts, opts or {})
-	wezterm.log_info(opts)
 
 	local folder = require("resurrect.state_manager").save_state_dir
-	wezterm.log_info(folder)
-	wezterm.log_info(folder)
 
 	-- Always use the recursive search function
 	local stdout = find_json_files_recursive(folder)
-	wezterm.log_info(stdout)
 
 	str_pad = opts.name_truncature or "..."
 	pad_len = utf8len(str_pad)
