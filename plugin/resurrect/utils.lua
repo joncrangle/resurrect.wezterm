@@ -6,12 +6,10 @@ utils.is_windows = wezterm.target_triple == "x86_64-pc-windows-msvc"
 utils.is_mac = (wezterm.target_triple == "x86_64-apple-darwin" or wezterm.target_triple == "aarch64-apple-darwin")
 utils.separator = utils.is_windows and "\\" or "/"
 
-local constants = require("utils.constants")
-
--- Helper function to remove formatting sequence in strings
+-- Helper function to remove formatting esc sequences in the string
 ---@param str string
 ---@return string
-function utils.strip_format(str)
+function utils.strip_format_esc_seq(str)
 	local clean_str, _ = str:gsub(string.char(27) .. "%[[^m]*m", "")
 	return clean_str
 end

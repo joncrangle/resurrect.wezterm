@@ -1,6 +1,6 @@
 local wezterm = require("wezterm") --[[@as Wezterm]] --- this type cast invokes the LSP module for Wezterm
 local utils = require("resurrect.utils")
-local strip_format = utils.strip_format
+local strip_format_esc_seq = utils.strip_format
 local utf8len = utils.utf8len
 local pub = {}
 
@@ -201,7 +201,7 @@ local function format_label(win_width, file, max_length, opts)
 		label.date_raw = file.date
 		if opts.fmt_date then
 			label.date_fmt = opts.fmt_date(label.date_raw)
-			label.date_len = utf8len(strip_format(label.date_fmt))
+			label.date_len = utf8len(strip_format_esc_seq(label.date_fmt))
 		else
 			label.date_fmt = label.date_raw
 			label.date_len = utf8len(label.date_fmt_fmt)
@@ -210,7 +210,7 @@ local function format_label(win_width, file, max_length, opts)
 	label.name_raw = label.filename_raw .. label.separator .. label.padding_raw .. label.separator
 	if file.fmt then
 		label.name_fmt = file.fmt(label.name_raw)
-		label.name_len = utf8len(strip_format(label.name_fmt))
+		label.name_len = utf8len(strip_format_esc_seq(label.name_fmt))
 	else
 		label.name_fmt = label.name_raw
 		label.name_len = utf8len(label.name_fmt)
@@ -351,7 +351,7 @@ local function insert_choices(stdout, opts)
 						-- consider the length of the formatted date section
 						if opts.show_state_with_date then
 							if opts.fmt_date then
-								estimated_length = utf8len(strip_format(opts.fmt_date(file.date))) + 2 -- for the separators
+								estimated_length = utf8len(strip_format_esc_seq(opts.fmt_date(file.date))) + 2 -- for the separators
 							else
 								estimated_length = utf8len(file.date)
 							end
