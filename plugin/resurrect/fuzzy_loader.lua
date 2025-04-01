@@ -224,19 +224,19 @@ local function format_label(win_width, file, max_length, opts)
 	local overflow_chars = math.max(0, width - win_width)
 
 	if overflow_chars == 0 then
-		-- No oversize for this line, thus we keep it as is
+		-- No overflow_chars for this line, thus we keep it as is
 		return label.name_fmt .. label.date_fmt
 	else
 		-- we need to remove characters; first check if the padding can be used
 		if label.padding_len ~= 0 then
 			local new_len = math.max(0, label.padding_len - overflow_chars)
-			overflow_chars = overflow_chars - (label.padding_len - new_len) -- update the oversize
+			overflow_chars = overflow_chars - (label.padding_len - new_len) -- update the overflow_chars
 			label.padding_raw = string.rep(".", new_len)
 		end
 		-- we tackle the filename reducing it to a length with a minimum of `min_filename_len`
 		if overflow_chars ~= 0 then
 			-- new we need to apply the size reduction to the filename, our strategy:
-			-- remove the `oversize` from the middle of the filename string and
+			-- remove the `overflow_chars` from the middle of the filename string and
 			-- replace it by opts.name_truncature, thus we need to correct that by adding its length
 			overflow_chars = overflow_chars + pad_len
 			-- here we can re-adjust the filename string to fit the available room, but up to a point
@@ -244,7 +244,7 @@ local function format_label(win_width, file, max_length, opts)
 			overflow_chars = overflow_chars - reduction
 			label.filename_raw = utils.replace_center(label.filename_raw, reduction, str_pad)
 		end
-		-- do we still have an oversize? we can do something only if we have a date, otherwise we did our best
+		-- do we still have an overflow_chars? we can do something only if we have a date, otherwise we did our best
 		if overflow_chars ~= 0 and opts.show_state_with_date then
 			local new_len = math.max(0, label.date_len - overflow_chars)
 			if new_len == 0 then
@@ -289,7 +289,7 @@ local function insert_choices(stdout, opts)
 	-- Parse the stdout and construct the file table
 	for line in stdout:gmatch("[^\n]+") do
 		local epoch, type, file = line:match("%s*(%d+)%s+.+[/\\]([^/\\]+)[/\\]([^/\\]+%.json)$")
-		if epoch and file and type and type == type then
+		if epoch and file and type then
 			-- consider the "cost" of the formatting of the filename, i.e., if the format function adds characters
 			-- to the visible part of the file section, we test the three possible formatter to get the highest cost
 			-- we use a real entry instead of an empty string to prevent formatting error if the format function has
@@ -459,6 +459,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 		}),
 		pane
 	)
+	fmt_cost = {} -- we need to reinitialize this since next call might be with different options, including formatting
 end
 
 return pub
