@@ -145,7 +145,7 @@ local function find_json_files_recursive(base_path)
 		end
 	elseif utils.is_mac then
 		-- macOS recursive find command for JSON files
-		cmd = 'find "' .. base_path .. '" -type f -name "*.json" -0rint0 | xargs -0 stat -f "%m %N"'
+		cmd = 'find "' .. base_path .. '" -type f -name "*.json" -print0 | xargs -0 stat -f "%m %N"'
 	else
 		-- Linux optimized recursive find command for JSON files
 		cmd = string.format(
