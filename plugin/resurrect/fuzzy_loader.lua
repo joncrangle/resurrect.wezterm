@@ -424,6 +424,7 @@ function pub.fuzzy_load(window, pane, callback, opts)
 	local folder = require("resurrect.state_manager").save_state_dir
 
 	local stdout = find_json_files_recursive(folder)
+	print(stdout)
 
 	str_pad = opts.name_truncature or "..."
 	pad_len = utf8len(str_pad)
