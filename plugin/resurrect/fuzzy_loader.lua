@@ -289,6 +289,11 @@ local function insert_choices(stdout, opts)
 	-- Parse the stdout and construct the file table
 	for line in stdout:gmatch("[^\n]+") do
 		local epoch, type, file = line:match("%s*(%d+)%s+.+[/\\]([^/\\]+)[/\\]([^/\\]+%.json)$")
+		-- epoch in this case represents the last modified date/time according to the OS
+		-- For Unix/POSIX Epoch is counted from January 1st, 1970 0 UTC
+		-- MacOS it is from January 1st, 1904 0 UTC
+		-- Windows NTFS (up to Win 11) it is from January 1st, 1601 0 UTC
+		-- The function `os.date()` used later on will convert the date according to the host OS
 		if epoch and file and type then
 			-- consider the "cost" of the formatting of the filename, i.e., if the format function adds characters
 			-- to the visible part of the file section, we test the three possible formatter to get the highest cost
