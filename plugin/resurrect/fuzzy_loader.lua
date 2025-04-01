@@ -155,12 +155,12 @@ local function find_json_files_recursive(base_path)
 	end
 
 	-- Execute the command and capture stdout for non-Windows
-	stdout, suc, err = utils.execute(cmd)
+	suc, stdout = utils.execute(cmd)
 
 	if suc then
 		return stdout
 	else
-		wezterm.emit("resurrect.error", err)
+		wezterm.emit("resurrect.error", stdout)
 		return
 	end
 end
