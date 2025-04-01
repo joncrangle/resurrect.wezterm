@@ -44,44 +44,6 @@ function utils.utf8len(str)
 	return len
 end
 
--- Write a file with the content of a string
----@param file_path string full filename
----@return boolean success result
----@return string|nil error
-function utils.write_file(file_path, str)
-	local suc, err = pcall(function()
-		local handle = io.open(file_path, "w+")
-		if not handle then
-			error("Could not open file: " .. file_path)
-		end
-		handle:write(str)
-		handle:flush()
-		handle:close()
-	end)
-	return suc, err
-end
-
--- Read a file and return its content
----@param file_path string full filename
----@return boolean success result
----@return string|nil error
-function utils.read_file(file_path)
-	local stdout
-	local suc, err = pcall(function()
-		local handle = io.open(file_path, "r")
-		if not handle then
-			error("Could not open file: " .. file_path)
-		end
-		stdout = handle:read("*a")
-		handle:close()
-	end)
-	if suc then
-		return suc, stdout
-	else
-		return suc, err
-	end
-end
-
 -- Execute a cmd and return its stdout
 ---@param cmd string command
 ---@return boolean success result
@@ -114,6 +76,78 @@ function utils.ensure_folder_exists(path)
 	else
 		os.execute('mkdir -p "' .. path .. '"')
 	end
+end
+
+-- deep copy
+---@param original table
+---@return any copy
+function utils.deepcopy(original)
+	local copy
+	if type(original) == "table" then
+		copy = {}
+		for k, v in pairs(original) do
+			copy[k] = utils.deepcopy(v)
+		end
+	else
+		copy = original
+	end
+	return copy
+end
+
+-- extend table
+---@alias behavior
+---| 'error' # Raises an error if a kye exists in multiple tables
+---| 'keep'  # Uses the value from the leftmost table (first occurrence)
+---| 'force' # Uses the value from the rightmost table (last occurrence)
+---
+---@param behavior behavior
+---@param ... table
+---@return table|nil
+function utils.tbl_deep_extend(behavior, ...)
+	local tables = { ... }
+	if #tables == 0 then
+		return {}
+	end
+
+	local result = {}
+	for k, v in pairs(tables[1]) do
+		if type(v) == "table" then
+			result[k] = utils.deepcopy(v)
+		else
+			result[k] = v
+		end
+	end
+
+	for i = 2, #tables do
+		for k, v in pairs(tables[i]) do
+			if type(result[k]) == "table" and type(v) == "table" then
+				-- For nested tables, we recurse with the same behavior
+				result[k] = utils.tbl_deep_extend(behavior, result[k], v)
+			elseif result[k] ~= nil then
+				-- Key exists in the result already
+				if behavior == "error" then
+					error("Key '" .. tostring(k) .. "' exists in multiple tables")
+				elseif behavior == "force" then
+					-- "force" uses value from rightmost table
+					if type(v) == "table" then
+						result[k] = utils.deepcopy(v)
+					else
+						result[k] = v
+					end
+				end
+			-- "keep" keeps the leftmost value, which is already in result
+			else
+				-- Key doesn't exist in result yet, add it
+				if type(v) == "table" then
+					result[k] = utils.deepcopy(v)
+				else
+					result[k] = v
+				end
+			end
+		end
+	end
+
+	return result
 end
 
 return utils
