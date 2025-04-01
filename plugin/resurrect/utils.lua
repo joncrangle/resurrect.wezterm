@@ -46,7 +46,6 @@ end
 
 -- Write a file with the content of a string
 ---@param file_path string full filename
----@param str string string to be Write
 ---@return boolean success result
 ---@return string|nil error
 function utils.write_file(file_path, str)
@@ -64,7 +63,6 @@ end
 
 -- Read a file and return its content
 ---@param file_path string full filename
----@return string content file content
 ---@return boolean success result
 ---@return string|nil error
 function utils.read_file(file_path)
@@ -78,15 +76,14 @@ function utils.read_file(file_path)
 		handle:close()
 	end)
 	if suc then
-		return stdout, true
+		return suc, stdout
 	else
-		return "", suc, err
+		return suc, err
 	end
 end
 
 -- Execute a cmd and return its stdout
 ---@param cmd string command
----@return string stdout command result
 ---@return boolean success result
 ---@return string|nil error
 function utils.execute(cmd)
@@ -103,9 +100,9 @@ function utils.execute(cmd)
 		handle:close()
 	end)
 	if suc then
-		return stdout, true
+		return suc, stdout
 	else
-		return "", suc, err
+		return suc, err
 	end
 end
 
