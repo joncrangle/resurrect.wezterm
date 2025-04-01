@@ -209,7 +209,6 @@ local function insert_choices(stdout, opts)
 						local fmt = opts[string.format("fmt_%s", t)]
 						if fmt then
 							fmt_cost[t] = utf8len(utils.strip_format_esc_seq(fmt(file))) - len
-							wezterm.log_info(t, fmt(file))
 						end
 					end
 				end
@@ -222,7 +221,6 @@ local function insert_choices(stdout, opts)
 							- fmt_cost.str_date
 					end
 				end
-				wezterm.log_info(fmt_cost)
 			end
 
 			-- Calculating the maximum file length
@@ -274,7 +272,7 @@ local function insert_choices(stdout, opts)
 			file.date = ""
 
 			if opts.show_state_with_date then
-				file.date = os.date(opts.date_format, tonumber(file.epoch))
+				file.date = " " .. os.date(opts.date_format, tonumber(file.epoch))
 				if opts.fmt_date then
 					file.date = opts.fmt_date(file.date)
 				end
