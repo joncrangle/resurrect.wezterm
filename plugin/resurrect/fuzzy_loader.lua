@@ -313,7 +313,6 @@ local function insert_choices(stdout, opts)
 						local fmt = opts[string.format("fmt_%s", t)]
 						if fmt then
 							fmt_cost[t] = utf8len(fmt(file)) - len
-							wezterm.log_info(t, fmt_cost)
 						end
 					end
 				end
@@ -344,7 +343,6 @@ local function insert_choices(stdout, opts)
 
 	-- Add files to state_files list and apply the formatting functions
 	for _, type in ipairs(types) do
-		wezterm.log_info(type, #files[type])
 		for _, file in ipairs(files[type]) do
 			local label = ""
 			if opts.show_state_with_date then
@@ -359,7 +357,6 @@ local function insert_choices(stdout, opts)
 				-- consider the length of the formatted date section
 				if opts.show_state_with_date then
 					if opts.fmt_date then
-						wezterm.log_info('"' .. opts.fmt_date(file.date) .. '"')
 						estimated_length = utf8len(utils.strip_format_esc_seq(opts.fmt_date(file.date))) + 2 -- for the separators
 					else
 						estimated_length = utf8len(file.date)
