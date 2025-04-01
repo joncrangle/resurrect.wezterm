@@ -246,19 +246,19 @@ local function insert_choices(stdout, opts)
 	local width = utils.get_current_window_width() - 6
 
 	local overall_overflow_chars = 0
-	if not opts.ignore_screen_width then
-		-- determines whether we need to manage content to fit the screen
-		local total_length = max_length + fmt_cost.str_date + fmt_cost.fmt_date
-		-- if total_length > width then
-		-- 	must_shrink = true
-		-- else
-		-- 	must_shrink = false
-		-- end
+	local total_length = max_length + fmt_cost.str_date + fmt_cost.fmt_date
+	if opts.ignore_screen_width then
+		if width < total_length then
+			max_length = width - fmt_cost.str_date - fmt_cost.fmt_date
+		end
+	else
+		total_length = math.max(width, total_length)
 		overall_overflow_chars = total_length - width
 	end
 
 	wezterm.log_info("screen width", width)
 	wezterm.log_info("max length", max_length)
+	wezterm.log_info("total length", total_length)
 	wezterm.log_info("total cost ws", max_length + fmt_cost.workspace + fmt_cost.str_date + fmt_cost.fmt_date)
 	wezterm.log_info("total cost wn", max_length + fmt_cost.window + fmt_cost.str_date + fmt_cost.fmt_date)
 	wezterm.log_info("total cost tb", max_length + fmt_cost.tab + fmt_cost.str_date + fmt_cost.fmt_date)
