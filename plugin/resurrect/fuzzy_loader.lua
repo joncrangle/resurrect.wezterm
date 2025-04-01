@@ -304,8 +304,7 @@ local function insert_choices(stdout, opts)
 			-- This prevent from having to format every filename, instead we can take the filename length and then
 			-- the cost of formatting per type
 			--
-			wezterm.log_info(#fmt_cost)
-			if #fmt_cost == 0 then
+			if next(fmt_cost) == nil then
 				fmt_cost.workspace = 0
 				fmt_cost.window = 0
 				fmt_cost.tab = 0
@@ -314,7 +313,7 @@ local function insert_choices(stdout, opts)
 					if not opts[string.format("ignore_%ss", t)] then
 						local fmt = opts[string.format("fmt_%s", t)]
 						if fmt then
-							fmt_cost[type] = math.max(fmt_cost[type], utf8len(fmt(file)) - len)
+							fmt_cost[t] = math.max(fmt_cost[t], utf8len(fmt(file)) - len)
 							wezterm.log_info(t, fmt_cost)
 						end
 					end
