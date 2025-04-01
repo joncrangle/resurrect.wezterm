@@ -299,7 +299,7 @@ local function insert_choices(stdout, opts)
 				-- we correct the number of overflow_chars with what could be reduced from the dots
 				-- max_length - file.filename_len - 1 is the length of dots we should have had if we had
 				-- enough space
-				overflow_chars = overflow_chars - ((max_length - file.filename - 1) - #file.dots)
+				overflow_chars = overflow_chars - ((max_length - file.filename_len - 1) - #file.dots)
 				file.dots = " " .. file.dots .. " " -- adding the padding around the dots
 			end
 
