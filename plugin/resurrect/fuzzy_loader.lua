@@ -145,11 +145,11 @@ local function find_json_files_recursive(base_path)
 		end
 	elseif utils.is_mac then
 		-- macOS recursive find command for JSON files
-		cmd = 'find "' .. base_path .. '" -type f -name "*.json" -wezterm.log_info0 | xargs -0 stat -f "%m %N"'
+		cmd = 'find "' .. base_path .. '" -type f -name "*.json" -print0 | xargs -0 stat -f "%m %N"'
 	else
 		-- Linux optimized recursive find command for JSON files
 		cmd = string.format(
-			'find "$(realpath %q)" -type f -name "*.json" -wezterm.log_infof "%%T@ %%p\\n" | awk \'{split($1, a, "."); print a[1], $2}\'',
+			'find "$(realpath %q)" -type f -name "*.json" -printf "%%T@ %%p\\n" | awk \'{split($1, a, "."); print a[1], $2}\'',
 			base_path
 		)
 	end
@@ -428,10 +428,11 @@ function pub.fuzzy_load(window, pane, callback, opts)
 
 	local folder = require("resurrect.state_manager").save_state_dir
 	wezterm.log_info(folder)
+	wezterm.log_info(folder)
 
 	-- Always use the recursive search function
 	local stdout = find_json_files_recursive(folder)
-	wezterm.log_info(stdout or "")
+	wezterm.log_info(stdout)
 
 	str_pad = opts.name_truncature or "..."
 	pad_len = utf8len(str_pad)
