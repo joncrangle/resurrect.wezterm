@@ -17,48 +17,46 @@ local min_filename_len
 ---fmt_tab: fmt_fun, fmt_date: fmt_fun, show_state_with_date: boolean, date_format: string, ignore_screen_width: boolean,
 ---name_truncature: string, min_filename_size: number}
 
----Returns default fuzzy loading options
+---Default fuzzy loading options
 ---@return fuzzy_load_opts
-function pub.get_default_fuzzy_load_opts()
-	return {
-		title = "Load State",
-		description = "Select State to Load and press Enter = accept, Esc = cancel, / = filter",
-		fuzzy_description = "Search State to Load: ",
-		is_fuzzy = true,
-		ignore_workspaces = false,
-		ignore_windows = false,
-		ignore_tabs = false,
-		ignore_screen_width = true,
-		date_format = "%d-%m-%Y %H:%M:%S",
-		show_state_with_date = false,
-		name_truncature = " " .. wezterm.nerdfonts.cod_ellipsis .. "  ",
-		min_filename_size = 10,
-		fmt_date = function(date)
-			return wezterm.format({
-				{ Foreground = { AnsiColor = "White" } },
-				{ Text = date },
-			})
-		end,
-		fmt_workspace = function(label)
-			return wezterm.format({
-				{ Foreground = { AnsiColor = "Green" } },
-				{ Text = "󱂬 : " .. label:gsub(".json", "") },
-			})
-		end,
-		fmt_window = function(label)
-			return wezterm.format({
-				{ Foreground = { AnsiColor = "Yellow" } },
-				{ Text = " : " .. label:gsub(".json", "") },
-			})
-		end,
-		fmt_tab = function(label)
-			return wezterm.format({
-				{ Foreground = { AnsiColor = "Red" } },
-				{ Text = "󰓩 : " .. label:gsub(".json", "") },
-			})
-		end,
-	}
-end
+pub.default_fuzzy_load_opts = {
+	title = "Load State",
+	description = "Select State to Load and press Enter = accept, Esc = cancel, / = filter",
+	fuzzy_description = "Search State to Load: ",
+	is_fuzzy = true,
+	ignore_workspaces = false,
+	ignore_windows = false,
+	ignore_tabs = false,
+	ignore_screen_width = true,
+	date_format = "%d-%m-%Y %H:%M:%S",
+	show_state_with_date = false,
+	name_truncature = " " .. wezterm.nerdfonts.cod_ellipsis .. "  ",
+	min_filename_size = 10,
+	fmt_date = function(date)
+		return wezterm.format({
+			{ Foreground = { AnsiColor = "White" } },
+			{ Text = date },
+		})
+	end,
+	fmt_workspace = function(label)
+		return wezterm.format({
+			{ Foreground = { AnsiColor = "Green" } },
+			{ Text = "󱂬 : " .. label:gsub(".json", "") },
+		})
+	end,
+	fmt_window = function(label)
+		return wezterm.format({
+			{ Foreground = { AnsiColor = "Yellow" } },
+			{ Text = " : " .. label:gsub(".json", "") },
+		})
+	end,
+	fmt_tab = function(label)
+		return wezterm.format({
+			{ Foreground = { AnsiColor = "Red" } },
+			{ Text = "󰓩 : " .. label:gsub(".json", "") },
+		})
+	end,
+}
 
 -- Optimized recursive JSON file finder for all platforms
 ---@param base_path string starting path from which the recursive search takes place
@@ -420,17 +418,7 @@ end
 function pub.fuzzy_load(window, pane, callback, opts)
 	wezterm.emit("resurrect.fuzzy_loader.fuzzy_load.start", window, pane)
 
-	if opts == nil then
-		opts = pub.get_default_fuzzy_load_opts()
-	else
-		-- Merge user opts with defaults
-		local default_opts = pub.get_default_fuzzy_load_opts()
-		for k, v in pairs(default_opts) do
-			if opts[k] == nil then
-				opts[k] = v
-			end
-		end
-	end
+	opts = utils.tbl_deep_extend("force", pub.default_fuzzy_load_opts, opts or {})
 
 	local folder = require("resurrect.state_manager").save_state_dir
 
