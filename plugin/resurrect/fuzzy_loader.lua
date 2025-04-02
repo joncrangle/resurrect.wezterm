@@ -223,7 +223,7 @@ local function insert_choices(stdout, opts)
 			end
 
 			-- Calculating the maximum file length
-			local filename_len = utils.utf8len(file) -- we keep this so we don't have to measure it later
+			local filename_len = utils.utf8len(file) + fmt_cost[type] -- we keep this so we don't have to measure it later
 			max_length = math.max(max_length, filename_len + fmt_cost[type])
 
 			local date = ""
@@ -233,6 +233,7 @@ local function insert_choices(stdout, opts)
 					date = opts.fmt_date(date)
 				end
 			end
+			local date_len = utils.utf8len(utils.strip_format_esc_seq(date))
 
 			-- collecting all relevant information about the file
 			local fmt = opts[string.format("fmt_%s", type)]
@@ -241,33 +242,20 @@ local function insert_choices(stdout, opts)
 				filename = file,
 				filename_len = filename_len,
 				date = date,
+				date_len = date_len,
 				fmt = fmt,
 			})
 		end
 	end
 
-	-- During the selection view, InputSelector will take 4 characters on the left and 2 characters
-	-- on the right of the window
-	local width = utils.get_current_window_width() - 6
-
-	local overall_overflow_chars = 0
-	local min_used_length = max_length + fmt_cost.str_date + fmt_cost.fmt_date
-	local total_length = min_used_length
+	local used_width
 	if opts.ignore_screen_width then
-		if width < total_length then
-			max_length = width - fmt_cost.str_date - fmt_cost.fmt_date
-		end
+		used_width = max_length + fmt_cost.str_date + fmt_cost.fmt_date
 	else
-		total_length = math.max(width, min_used_length)
-		overall_overflow_chars = min_used_length - total_length
+		-- During the selection view, InputSelector will take 4 characters on the left and 2 characters
+		-- on the right of the window
+		used_width = utils.get_current_window_width() - 6
 	end
-
-	wezterm.log_info("screen width", width)
-	wezterm.log_info("max length", max_length)
-	wezterm.log_info("min used length", min_used_length)
-	wezterm.log_info("costs", fmt_cost)
-	wezterm.log_info("total length", total_length)
-	wezterm.log_info("Overall overflow", overall_overflow_chars)
 
 	-- constants used to shorten the file name if necessary
 	local str_pad = opts.name_truncature or "..."
@@ -277,46 +265,45 @@ local function insert_choices(stdout, opts)
 	-- Add files to state_files list and apply the formatting functions
 	for _, type in ipairs(types) do
 		for _, file in ipairs(files[type]) do
-			local overflow_chars = overall_overflow_chars
+			local label = file.filename
+			local dots = ""
 
-			file.label = file.filename
-			file.dots = ""
+			local filename_date_len = file.filename_len + file.date_len
 
+			-- we prepare here the dots separator between the file name and the date, taking into account the space available
+			-- if not enough space available the separator will be limited to the single space that is prefixing the date
+			-- if there is enough space, we can make the display prettier by have a space between the file name and the
+			-- dots separator
 			if opts.show_state_with_date then
-				file.dots = string.rep(
-					".",
-					math.max( -- ensures that we don't have a negative length
-						0,
-						math.min( -- the length of the dotted line is bound by the number of overflow_chars we might have to save
-							max_length - file.filename_len - 1,
-							max_length - file.filename_len - 1 - overflow_chars
-						)
-					)
-				)
-				-- we correct the number of overflow_chars with what could be reduced from the dots
-				-- max_length - file.filename_len - 1 is the length of dots we should have had if we had
-				-- enough space
-				overflow_chars = overflow_chars - ((max_length - file.filename_len - 1) - #file.dots)
-				file.dots = " " .. file.dots .. " " -- adding the padding around the dots
+				local dots_len = math.max(used_width - filename_date_len, 0)
+				dots = string.rep(".", dots_len)
+
+				-- if there is enough room we can have a space between the filename and the dots
+				if #dots > 3 then
+					dots = " " .. dots:sub(2)
+				end
 			end
 
-			-- regardless of date or no date now we are either done with the overflow_chars or we still have to reduce the
-			-- number of chars of the filename
-
-			local reduction = file.filename_len
-				- math.max(min_filename_len, file.filename_len + pad_len - overflow_chars)
-			file.label = utils.replace_center(file.label, reduction, str_pad)
+			-- to fit in the space we use we would need to reduce the filename by that much
+			-- but keeping in mind that we don't want the name to become too small
+			if filename_date_len + #dots > used_width then
+				-- local reduction = filename_date_len + pad_len + #dots - used_width
+				--     reduction = file.filename_len - math.max(file.filename_len - reduction, min_filename_len + pad_len)
+				local reduction = file.filename_len - math.max(used_width - pad_len - #dots, min_filename_len)
+				wezterm.log_info("reduction", reduction)
+				label = utils.replace_center(label, reduction, str_pad)
+			end
 
 			-- and now everything comes together
-			file.label = file.label .. file.dots
+			label = label .. dots
 			if file.fmt then
-				file.label = file.fmt(file.label)
+				label = file.fmt(label)
 			end
-			file.label = file.label .. file.date
+			label = label .. file.date
 
 			wezterm.log_info(utils.utf8len(utils.strip_format_esc_seq(file.label)))
 
-			table.insert(state_files, { id = file.id, label = file.label })
+			table.insert(state_files, { id = file.id, label = label })
 		end
 	end
 	return state_files
