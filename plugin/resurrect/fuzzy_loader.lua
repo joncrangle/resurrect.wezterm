@@ -291,7 +291,6 @@ local function insert_choices(stdout, opts)
 				--     reduction = file.filename_len - math.max(file.filename_len - reduction, min_filename_len + pad_len)
 				local reduction = file.filename_len
 					- math.max(used_width - file.date_len - pad_len - #dots, min_filename_len + pad_len)
-				wezterm.log_info("reduction", reduction)
 				label = utils.replace_center(label, reduction, str_pad)
 			end
 
@@ -301,8 +300,6 @@ local function insert_choices(stdout, opts)
 				label = file.fmt(label)
 			end
 			label = label .. file.date
-
-			wezterm.log_info(utils.utf8len(utils.strip_format_esc_seq(label)))
 
 			table.insert(state_files, { id = file.id, label = label })
 		end
