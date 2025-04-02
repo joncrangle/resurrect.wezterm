@@ -264,6 +264,7 @@ local function insert_choices(stdout, opts)
 
 	wezterm.log_info("screen width", width)
 	wezterm.log_info("max length", max_length)
+	wezterm.log_info("min used length", min_used_length)
 	wezterm.log_info("costs", fmt_cost)
 	wezterm.log_info("total length", total_length)
 	wezterm.log_info("Overall overflow", overall_overflow_chars)
