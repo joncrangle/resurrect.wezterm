@@ -301,7 +301,7 @@ local function insert_choices(stdout, opts)
 			end
 			label = label .. file.date
 
-			wezterm.log_info(utils.utf8len(utils.strip_format_esc_seq(file.label)))
+			wezterm.log_info(utils.utf8len(utils.strip_format_esc_seq(label)))
 
 			table.insert(state_files, { id = file.id, label = label })
 		end
