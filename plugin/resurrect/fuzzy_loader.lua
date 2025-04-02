@@ -224,7 +224,7 @@ local function insert_choices(stdout, opts)
 
 			-- Calculating the maximum file length
 			local filename_len = utils.utf8len(file) + fmt_cost[type] -- we keep this so we don't have to measure it later
-			max_length = math.max(max_length, filename_len + fmt_cost[type])
+			max_length = math.max(max_length, filename_len)
 
 			local date = ""
 			if opts.show_state_with_date then
@@ -287,9 +287,10 @@ local function insert_choices(stdout, opts)
 			-- to fit in the space we use we would need to reduce the filename by that much
 			-- but keeping in mind that we don't want the name to become too small
 			if filename_date_len + #dots > used_width then
-				-- local reduction = filename_date_len + pad_len + #dots - used_width
+				-- local reduction = file.filename_len + file.date_len + pad_len + #dots - used_width
 				--     reduction = file.filename_len - math.max(file.filename_len - reduction, min_filename_len + pad_len)
-				local reduction = file.filename_len - math.max(used_width - pad_len - #dots, min_filename_len + pad_len)
+				local reduction = file.filename_len
+					- math.max(used_width - file.date_len - pad_len - #dots, min_filename_len + pad_len)
 				wezterm.log_info("reduction", reduction)
 				label = utils.replace_center(label, reduction, str_pad)
 			end
