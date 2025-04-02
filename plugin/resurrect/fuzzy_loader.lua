@@ -289,7 +289,8 @@ local function insert_choices(stdout, opts)
 			if filename_date_len + #dots > used_width then
 				-- local reduction = filename_date_len + pad_len + #dots - used_width
 				--     reduction = file.filename_len - math.max(file.filename_len - reduction, min_filename_len + pad_len)
-				local reduction = file.filename_len - math.max(used_width - pad_len - #dots, min_filename_len)
+				local reduction =
+					math.max(0, file.filename_len - math.max(used_width - pad_len - #dots, min_filename_len))
 				wezterm.log_info("reduction", reduction)
 				label = utils.replace_center(label, reduction, str_pad)
 			end
