@@ -1,7 +1,6 @@
 local wezterm = require("wezterm") --[[@as Wezterm]] --- this type cast invokes the LSP module for Wezterm
 local utils = require("resurrect.utils")
 local file_io = require("resurrect.file_io")
-local utf8len = utils.utf8len
 local pub = {}
 
 -- Cached values in the module
@@ -203,28 +202,28 @@ local function insert_choices(stdout, opts)
 				fmt_cost.str_date = 0 -- cost of date as a string
 				fmt_cost.fmt_date = 0 -- cost of formatting the date
 				-- Calculate the cost for formatting the filename
-				local len = utf8len(file)
+				local len = utils.utf8len(file)
 				for _, t in ipairs(types) do
 					if not opts[string.format("ignore_%ss", t)] then
 						local fmt = opts[string.format("fmt_%s", t)]
 						if fmt then
-							fmt_cost[t] = utf8len(utils.strip_format_esc_seq(fmt(file))) - len
+							fmt_cost[t] = utils.utf8len(utils.strip_format_esc_seq(fmt(file))) - len
 						end
 					end
 				end
 				-- Calculate the cost for formatting the date
 				if opts.show_state_with_date then
 					local str_date = os.date(opts.date_format, tonumber(epoch))
-					fmt_cost.str_date = utf8len(str_date)
+					fmt_cost.str_date = utils.utf8len(str_date)
 					if opts.fmt_date then
-						fmt_cost.fmt_date = utf8len(utils.strip_format_esc_seq(opts.fmt_date(str_date)))
+						fmt_cost.fmt_date = utils.utf8len(utils.strip_format_esc_seq(opts.fmt_date(str_date)))
 							- fmt_cost.str_date
 					end
 				end
 			end
 
 			-- Calculating the maximum file length
-			local filename_len = utf8len(file) -- we keep this so we don't have to measure it later
+			local filename_len = utils.utf8len(file) -- we keep this so we don't have to measure it later
 			max_length = math.max(max_length, filename_len + fmt_cost[type])
 
 			-- collecting all relevant information about the file
@@ -297,7 +296,7 @@ local function insert_choices(stdout, opts)
 			-- regardless of date or no date now we are either done with the overflow_chars or we still have to reduce the
 			-- number of chars of the filename
 			local str_pad = opts.name_truncature or "..."
-			local pad_len = utf8len(str_pad)
+			local pad_len = utils.utf8len(str_pad)
 			local min_filename_len = opts.min_filename_size or 10 -- minimum size of the filename to remain decypherable
 
 			local reduction = file.filename_len
@@ -310,6 +309,8 @@ local function insert_choices(stdout, opts)
 				file.label = file.fmt(file.label)
 			end
 			file.label = file.label .. file.date
+
+			wezterm.log_info(utils.utf8len(utils.strip_format_esc_seq(file.label)))
 
 			table.insert(state_files, { id = file.id, label = file.label })
 		end
