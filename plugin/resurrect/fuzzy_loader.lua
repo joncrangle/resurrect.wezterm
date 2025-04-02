@@ -213,7 +213,7 @@ local function insert_choices(stdout, opts)
 				end
 				-- Calculate the cost for formatting the date
 				if opts.show_state_with_date then
-					local str_date = os.date(opts.date_format, tonumber(epoch))
+					local str_date = " " .. os.date(opts.date_format, tonumber(epoch))
 					fmt_cost.str_date = utils.utf8len(str_date)
 					if opts.fmt_date then
 						fmt_cost.fmt_date = utils.utf8len(utils.strip_format_esc_seq(opts.fmt_date(str_date)))
@@ -251,14 +251,15 @@ local function insert_choices(stdout, opts)
 	local width = utils.get_current_window_width() - 6
 
 	local overall_overflow_chars = 0
-	local total_length = max_length + fmt_cost.str_date + fmt_cost.fmt_date
+	local min_used_length = max_length + fmt_cost.str_date + fmt_cost.fmt_date
+	local total_length = min_used_length
 	if opts.ignore_screen_width then
 		if width < total_length then
 			max_length = width - fmt_cost.str_date - fmt_cost.fmt_date
 		end
 	else
-		total_length = math.max(width, total_length)
-		overall_overflow_chars = total_length - width
+		total_length = math.max(width, min_used_length)
+		overall_overflow_chars = min_used_length - total_length
 	end
 
 	wezterm.log_info("screen width", width)
