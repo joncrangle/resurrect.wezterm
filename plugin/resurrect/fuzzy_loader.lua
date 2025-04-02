@@ -226,13 +226,21 @@ local function insert_choices(stdout, opts)
 			local filename_len = utils.utf8len(file) -- we keep this so we don't have to measure it later
 			max_length = math.max(max_length, filename_len + fmt_cost[type])
 
+			local date = ""
+			if opts.show_state_with_date then
+				date = " " .. os.date(opts.date_format, tonumber(file.epoch))
+				if opts.fmt_date then
+					date = opts.fmt_date(date)
+				end
+			end
+
 			-- collecting all relevant information about the file
 			local fmt = opts[string.format("fmt_%s", type)]
 			table.insert(files[type], {
 				id = type .. utils.separator .. file,
 				filename = file,
 				filename_len = filename_len,
-				epoch = epoch,
+				date = date,
 				fmt = fmt,
 			})
 		end
@@ -255,11 +263,14 @@ local function insert_choices(stdout, opts)
 
 	wezterm.log_info("screen width", width)
 	wezterm.log_info("max length", max_length)
+	wezterm.log_info("costs", fmt_cost)
 	wezterm.log_info("total length", total_length)
-	wezterm.log_info("total cost ws", max_length + fmt_cost.workspace + fmt_cost.str_date + fmt_cost.fmt_date)
-	wezterm.log_info("total cost wn", max_length + fmt_cost.window + fmt_cost.str_date + fmt_cost.fmt_date)
-	wezterm.log_info("total cost tb", max_length + fmt_cost.tab + fmt_cost.str_date + fmt_cost.fmt_date)
 	wezterm.log_info("Overall overflow", overall_overflow_chars)
+
+	-- constants used to shorten the file name if necessary
+	local str_pad = opts.name_truncature or "..."
+	local pad_len = utils.utf8len(str_pad)
+	local min_filename_len = opts.min_filename_size or 10 -- minimum size of the filename to remain decypherable
 
 	-- Add files to state_files list and apply the formatting functions
 	for _, type in ipairs(types) do
@@ -268,14 +279,8 @@ local function insert_choices(stdout, opts)
 
 			file.label = file.filename
 			file.dots = ""
-			file.date = ""
 
 			if opts.show_state_with_date then
-				file.date = " " .. os.date(opts.date_format, tonumber(file.epoch))
-				if opts.fmt_date then
-					file.date = opts.fmt_date(file.date)
-				end
-
 				file.dots = string.rep(
 					".",
 					math.max( -- ensures that we don't have a negative length
@@ -295,9 +300,6 @@ local function insert_choices(stdout, opts)
 
 			-- regardless of date or no date now we are either done with the overflow_chars or we still have to reduce the
 			-- number of chars of the filename
-			local str_pad = opts.name_truncature or "..."
-			local pad_len = utils.utf8len(str_pad)
-			local min_filename_len = opts.min_filename_size or 10 -- minimum size of the filename to remain decypherable
 
 			local reduction = file.filename_len
 				- math.max(min_filename_len, file.filename_len + pad_len - overflow_chars)
