@@ -228,7 +228,7 @@ local function insert_choices(stdout, opts)
 
 			local date = ""
 			if opts.show_state_with_date then
-				date = " " .. os.date(opts.date_format, tonumber(file.epoch))
+				date = " " .. os.date(opts.date_format, tonumber(epoch))
 				if opts.fmt_date then
 					date = opts.fmt_date(date)
 				end
