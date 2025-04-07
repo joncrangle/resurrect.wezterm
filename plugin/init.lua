@@ -1,4 +1,5 @@
 local wezterm = require("wezterm") --[[@as Wezterm]] --- this type cast invokes the LSP module for Wezterm
+local dev = wezterm.plugin.require("https://github.com/chrisgve/dev.wezterm")
 
 local pub = {}
 
@@ -37,7 +38,12 @@ local function enable_sub_modules()
 end
 
 local function init()
-	enable_sub_modules()
+	-- enable_sub_modules()
+	local opts = {
+		auto = true,
+		keywords = { "github", "chrisgve", "resurrect", "wezterm" },
+	}
+	_ = dev.setup(opts)
 
 	require("resurrect.state_manager").change_state_save_dir(get_require_path() .. separator .. "state" .. separator)
 
