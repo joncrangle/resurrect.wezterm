@@ -3,9 +3,6 @@ local utils = require("resurrect.utils")
 local file_io = require("resurrect.file_io")
 local pub = {}
 
--- Cached values in the module
-local fmt_cost = {}
-
 ---@alias fmt_fun fun(label: string): string
 ---@alias fuzzy_load_opts {title: string, description: string, fuzzy_description: string, is_fuzzy: boolean,
 ---ignore_workspaces: boolean, ignore_tabs: boolean, ignore_windows: boolean, fmt_window: fmt_fun, fmt_workspace: fmt_fun,
@@ -165,6 +162,8 @@ end
 ---@param opts table
 ---@return table
 local function insert_choices(stdout, opts)
+	-- this structure will contain the formatting costs for each elements
+	local fmt_cost = {}
 	-- pre-calculation of formatting cost
 	local types = { "workspace", "window", "tab" }
 	local state_files = {}
@@ -350,7 +349,6 @@ function pub.fuzzy_load(window, pane, callback, opts)
 		}),
 		pane
 	)
-	fmt_cost = {} -- we need to reinitialize this since next call might be with different options, including formatting
 end
 
 return pub
