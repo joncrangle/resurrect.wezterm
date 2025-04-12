@@ -13,7 +13,7 @@ local fmt_cost = {}
 ---name_truncature: string, min_filename_size: number}
 
 ---Default fuzzy loading options
----@return fuzzy_load_opts
+---@type fuzzy_load_opts
 pub.default_fuzzy_load_opts = {
 	title = "Load State",
 	description = "Select State to Load and press Enter = accept, Esc = cancel, / = filter",
