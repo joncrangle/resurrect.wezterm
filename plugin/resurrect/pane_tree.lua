@@ -1,4 +1,5 @@
-local wezterm = require("wezterm")
+local wezterm = require("wezterm") --[[@as Wezterm]] --- this type cast invokes the LSP module for Wezterm
+local utils = require("resurrect.utils")
 
 ---@class pane_tree_module
 ---@field max_nlines integer
@@ -9,9 +10,6 @@ pub.max_nlines = 3500
 ---@alias PaneInformation {left: integer, top: integer, height: integer, width: integer}
 ---@alias pane_tree {left: integer, top: integer, height: integer, width: integer, bottom: pane_tree?, right: pane_tree?, text: string, cwd: string, domain?: string, process?: local_process_info?, pane: Pane?, is_active: boolean, is_zoomed: boolean, alt_screen_active: boolean}
 ---@alias local_process_info {name: string, argv: string[], cwd: string, executable: string}
-
---- checks if the user is on windows
-local is_windows = wezterm.target_triple == "x86_64-pc-windows-msvc"
 
 ---compare function returns true if a is more left than b
 ---@param a PaneInformation
@@ -88,7 +86,7 @@ local function insert_panes(root, panes)
 			root.cwd = ""
 		else
 			root.cwd = root.pane:get_current_working_dir().file_path
-			if is_windows then
+			if utils.is_windows then
 				root.cwd = root.cwd:gsub("^/([a-zA-Z]):", "%1:")
 			end
 		end

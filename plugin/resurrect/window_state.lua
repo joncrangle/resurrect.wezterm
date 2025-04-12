@@ -1,4 +1,4 @@
-local wezterm = require("wezterm")
+local wezterm = require("wezterm") --[[@as Wezterm]] --- this type cast invokes the LSP module for Wezterm
 local tab_state_mod = require("resurrect.tab_state")
 local pub = {}
 
@@ -85,7 +85,7 @@ end
 
 function pub.save_window_action()
 	return wezterm.action_callback(function(win, pane)
-		local resurrect = wezterm.plugin.require("https://github.com/MLFlexer/resurrect.wezterm")
+		local resurrect = require("resurrect")
 		local mux_win = win:mux_window()
 		if mux_win:get_title() == "" then
 			win:perform_action(

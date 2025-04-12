@@ -1,11 +1,8 @@
-local wezterm = require("wezterm")
+local wezterm = require("wezterm") --[[@as Wezterm]] --- this type cast invokes the LSP module for Wezterm
 local file_io = require("resurrect.file_io")
+local utils = require("resurrect.utils")
 
 local pub = {}
-
---- checks if the user is on windows
-local is_windows = wezterm.target_triple == "x86_64-pc-windows-msvc"
-local separator = is_windows and "\\" or "/"
 
 ---@param file_name string
 ---@param type string
@@ -15,7 +12,12 @@ local function get_file_path(file_name, type, opt_name)
 	if opt_name then
 		file_name = opt_name
 	end
-	return string.format("%s%s" .. separator .. "%s.json", pub.save_state_dir, type, file_name:gsub(separator, "+"))
+	return string.format(
+		"%s%s" .. utils.separator .. "%s.json",
+		pub.save_state_dir,
+		type,
+		file_name:gsub(utils.separator, "+")
+	)
 end
 
 ---save state to a file
@@ -94,16 +96,8 @@ end
 ---@return boolean
 ---@return string|nil
 function pub.write_current_state(name, type)
-	local file_path = pub.save_state_dir .. separator .. "current_state"
-	local suc, err = pcall(function()
-		local file = io.open(file_path, "w+")
-		if not file then
-			error("Could not open file: " .. file_path)
-		end
-		file:write(string.format("%s\n%s", name, type))
-		file:flush()
-		file:close()
-	end)
+	local file_path = pub.save_state_dir .. utils.separator .. "current_state"
+	local suc, err = file_io.write_file(file_path, string.format("%s\n%s", name, type))
 	return suc, err
 end
 
@@ -111,7 +105,7 @@ end
 ---@return boolean
 ---@return string|nil
 function pub.resurrect_on_gui_startup()
-	local file_path = pub.save_state_dir .. separator .. "current_state"
+	local file_path = pub.save_state_dir .. utils.separator .. "current_state"
 	local suc, err = pcall(function()
 		local file = io.open(file_path, "r")
 		if not file then
@@ -154,6 +148,10 @@ end
 ---Changes the directory to save the state to
 ---@param directory string
 function pub.change_state_save_dir(directory)
+	local types = { "workspace", "window", "tab" }
+	for _, type in ipairs(types) do
+		utils.ensure_folder_exists(directory .. "/" .. type)
+	end
 	pub.save_state_dir = directory
 end
 

@@ -143,7 +143,7 @@ resurrect.state_manager.set_encryption({
       pub.encryption.public_key,
       file_path:gsub(" ", "\\ ")
     )
-    
+
     local success, output = execute_cmd_with_stdin(cmd, lines)
     if not success then
       error("Encryption failed:" .. output)
@@ -152,12 +152,12 @@ resurrect.state_manager.set_encryption({
   decrypt = function(file_path)
     -- substitute for your decryption command
     local cmd = { pub.encryption.method, "-d", "-i", pub.encryption.private_key, file_path }
-    
+
     local success, stdout, stderr = wezterm.run_child_process(cmd)
     if not success then
       error("Decryption failed: " .. stderr)
     end
-    
+
     return stdout
   end,
 })
@@ -178,7 +178,7 @@ I have added the following to my configuration to be able to do this whenever I 
 -- loads the state whenever I create a new workspace
 wezterm.on("smart_workspace_switcher.workspace_switcher.created", function(window, path, label)
   local workspace_state = resurrect.workspace_state
-  
+
   workspace_state.restore_workspace(resurrect.state_manager.load_state(label, "workspace"), {
     window = window,
     relative = true,
@@ -288,7 +288,24 @@ optional `opts` argument, which has the following types:
 
 ```lua
 ---@alias fmt_fun fun(label: string): string
----@alias fuzzy_load_opts {title: string, description: string, fuzzy_description: string, is_fuzzy: boolean, ignore_workspaces: boolean, ignore_tabs: boolean, ignore_windows: boolean, fmt_window: fmt_fun, fmt_workspace: fmt_fun, fmt_tab: fmt_fun }
+---@alias fuzzy_load_opts {
+  title: string, -- dialog title, default: "Load state"
+  description: string, -- description, default: "Select State to Load and press Enter = accept, Esc = cancel, / = filter"
+  fuzzy_description: string, -- description in fyzzy search mode, default: "Search State to Load: "
+  is_fuzzy: boolean, -- enter directly in fuzzy mode, default: true
+  ignore_workspaces: boolean, -- does not show workspaces, default: false
+  ignore_tabs: boolean, -- does not show tabs, default: false
+  ignore_windows: boolean, -- does not show windows, default: false
+  fmt_window: fmt_fun, -- format function for window state name (wezterm.format)
+  fmt_workspace: fmt_fun, -- format function for workspace state name
+  fmt_tab: fmt_fun, -- format function for tab state name
+  fmt_date: fmt_fun, -- format function for date
+  show_state_with_date: boolean, -- show last update of the state file, default: false
+  date_format: string, -- date formatting, default: "%d-%m-%Y %H:%M:%S"
+  ignore_screen_width: boolean, -- whether or not to shrink the list if the window is too narrow, default: true
+  name_truncature: string, -- when state name is truncated, this string replaces the truncation
+  min_filename_size: number -- minimum size of state name in case of truncation
+}
 ```
 
 This is used to format labels, ignore saved state, change the title and change the behaviour of the fuzzy finder.
