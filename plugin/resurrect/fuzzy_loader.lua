@@ -290,7 +290,7 @@ local function insert_choices(stdout, opts)
 				-- Formulas kept for documentation:
 				-- 1. calculate the necessary reduction of the filename
 				-- local reduction = file.filename_len + file.date_len + pad_len + #dots - used_width
-				-- 2. correction of the reduction in case the resulting name length is smaller than the minimym
+				-- 2. correction of the reduction in case the resulting name length is smaller than the minimum
 				-- reduction = file.filename_len - math.max(file.filename_len - reduction, min_filename_len + pad_len)
 				-- 3. putting things together in a single formula
 				local reduction = file.filename_len
