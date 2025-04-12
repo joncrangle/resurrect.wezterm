@@ -248,13 +248,13 @@ local function insert_choices(stdout, opts)
 		end
 	end
 
-	local used_width
+	local available_width
 	if opts.ignore_screen_width then
-		used_width = max_length + fmt_cost.str_date + fmt_cost.fmt_date
+		available_width = max_length + fmt_cost.str_date + fmt_cost.fmt_date
 	else
 		-- During the selection view, InputSelector will take 4 characters on the left and 2 characters
 		-- on the right of the window
-		used_width = utils.get_current_window_width() - 6
+		available_width = utils.get_current_window_width() - 6
 	end
 
 	-- constants used to shorten the file name if necessary
@@ -275,7 +275,7 @@ local function insert_choices(stdout, opts)
 			-- if there is enough space, we can make the display prettier by have a space between the file name and the
 			-- dots separator
 			if opts.show_state_with_date then
-				local dots_len = math.max(used_width - filename_date_len, 0)
+				local dots_len = math.max(available_width - filename_date_len, 0)
 				dots = string.rep(".", dots_len)
 
 				-- if there is enough room we can have a space between the filename and the dots
@@ -286,15 +286,15 @@ local function insert_choices(stdout, opts)
 
 			-- to fit in the space we use we would need to reduce the filename by that much
 			-- but keeping in mind that we don't want the name to become too small
-			if filename_date_len + #dots > used_width then
+			if filename_date_len + #dots > available_width then
 				-- Formulas kept for documentation:
 				-- 1. calculate the necessary reduction of the filename
-				-- local reduction = file.filename_len + file.date_len + pad_len + #dots - used_width
-				-- 2. correction of the reduction in case the resulting name length is smaller than the minimum
+				-- local reduction = file.filename_len + file.date_len + pad_len + #dots - available_width
+				-- 2. correction of the reduction in case the resulting name length is smaller than the minimym
 				-- reduction = file.filename_len - math.max(file.filename_len - reduction, min_filename_len + pad_len)
 				-- 3. putting things together in a single formula
 				local reduction = file.filename_len
-					- math.max(used_width - file.date_len - pad_len - #dots, min_filename_len + pad_len)
+					- math.max(available_width - file.date_len - pad_len - #dots, min_filename_len + pad_len)
 				label = utils.replace_center(label, reduction, str_pad)
 			end
 
