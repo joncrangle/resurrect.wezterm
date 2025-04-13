@@ -13,9 +13,9 @@ local function init()
 		auto = true,
 		keywords = { "github", "MLFlexer", "resurrect", "wezterm" },
 	}
-	local require_path = dev.setup(opts)
+	local plugin_path = dev.setup(opts)
 
-	require("resurrect.state_manager").change_state_save_dir(require_path .. separator .. "state" .. separator)
+	require("resurrect.state_manager").change_state_save_dir(plugin_path .. separator .. "state" .. separator)
 
 	-- Export submodules
 	pub.workspace_state = require("resurrect.workspace_state")
