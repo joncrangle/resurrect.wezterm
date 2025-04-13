@@ -11,7 +11,7 @@ local function init()
 	-- enable_sub_modules()
 	local opts = {
 		auto = true,
-		keywords = { "github", "chrisgve", "resurrect", "wezterm" },
+		keywords = { "github", "MLFlexer", "resurrect", "wezterm" },
 	}
 	local require_path = dev.setup(opts)
 
