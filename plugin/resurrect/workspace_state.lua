@@ -22,9 +22,11 @@ function pub.restore_workspace(workspace_state, opts)
 			if opts.resize_window == true or opts.resize_window == nil then
 				opts.window:gui_window():set_inner_size(window_state.size.pixel_width, window_state.size.pixel_height)
 			end
-			opts.tab = opts.window:active_tab()
-			if not opts.close_open_panes then
-				opts.pane = opts.window:active_pane()
+			if not opts.close_open_tabs then
+				opts.tab = opts.window:active_tab()
+				if not opts.close_open_panes then
+					opts.pane = opts.window:active_pane()
+				end
 			end
 		else
 			local spawn_window_args = {
