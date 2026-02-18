@@ -85,7 +85,7 @@ end
 
 function pub.save_window_action()
 	return wezterm.action_callback(function(win, pane)
-		local resurrect = require("resurrect")
+		local save_state = require("resurrect.state_manager").save_state
 		local mux_win = win:mux_window()
 		if mux_win:get_title() == "" then
 			win:perform_action(
@@ -95,7 +95,7 @@ function pub.save_window_action()
 						if title then
 							window:mux_window():set_title(title)
 							local state = pub.get_window_state(mux_win)
-							resurrect.save_state(state)
+							save_state(state)
 						end
 					end),
 				}),
@@ -103,7 +103,7 @@ function pub.save_window_action()
 			)
 		elseif mux_win:get_title() then
 			local state = pub.get_window_state(mux_win)
-			resurrect.save_state(state)
+			save_state(state)
 		end
 	end)
 end

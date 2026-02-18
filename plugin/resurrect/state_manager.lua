@@ -13,10 +13,10 @@ local function get_file_path(file_name, type, opt_name)
 		file_name = opt_name
 	end
 	return string.format(
-		"%s%s" .. utils.separator .. "%s.json",
+		"%s" .. utils.separator .. "%s" .. utils.separator .. "%s.json",
 		pub.save_state_dir,
 		type,
-		file_name:gsub(utils.separator, "+")
+		file_name:gsub("[" .. utils.separator .. ":%[%]?/]", "+")
 	)
 end
 
@@ -148,6 +148,7 @@ end
 ---Changes the directory to save the state to
 ---@param directory string
 function pub.change_state_save_dir(directory)
+	directory = directory:gsub("[/\\]+$", "")
 	local types = { "workspace", "window", "tab" }
 	for _, type in ipairs(types) do
 		utils.ensure_folder_exists(directory .. "/" .. type)
