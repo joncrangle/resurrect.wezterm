@@ -94,6 +94,9 @@ end
 ---@param tab_state tab_state
 ---@param opts restore_opts
 function pub.restore_tab(tab, tab_state, opts)
+	if tab_state == nil then
+		return
+	end
 	wezterm.emit("resurrect.tab_state.restore_tab.start")
 	if opts.pane then
 		tab_state.pane_tree.pane = opts.pane

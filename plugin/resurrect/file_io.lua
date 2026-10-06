@@ -69,6 +69,8 @@ end
 ---@param file_path string
 ---@param state table
 ---@param event_type "workspace" | "window" | "tab"
+---@return boolean
+---@return string|nil
 function pub.write_state(file_path, state, event_type)
 	wezterm.emit("resurrect.file_io.write_state.start", file_path, event_type)
 	local json_state = wezterm.json_encode(state)
@@ -80,7 +82,8 @@ function pub.write_state(file_path, state, event_type)
 		end)
 		if not ok then
 			wezterm.emit("resurrect.error", "Encryption failed: " .. tostring(err))
-			wezterm.log_error("Decryption failed: " .. tostring(err))
+			wezterm.log_error("Encryption failed: " .. tostring(err))
+			return false, err
 		else
 			wezterm.emit("resurrect.file_io.encrypt.finished", file_path)
 		end
@@ -89,9 +92,11 @@ function pub.write_state(file_path, state, event_type)
 		if not ok then
 			wezterm.emit("resurrect.error", "Failed to write state: " .. err)
 			wezterm.log_error("Failed to write state: " .. err)
+			return false, err
 		end
 	end
 	wezterm.emit("resurrect.file_io.write_state.finished", file_path, event_type)
+	return true
 end
 
 ---@param file_path string
@@ -106,23 +111,32 @@ function pub.load_json(file_path)
 		if not ok then
 			wezterm.emit("resurrect.error", "Decryption failed: " .. tostring(output))
 			wezterm.log_error("Decryption failed: " .. tostring(output))
+			return nil
 		else
 			json = output
 			wezterm.emit("resurrect.file_io.decrypt.finished", file_path)
 		end
 	else
-		local lines = {}
-		for line in io.lines(file_path) do
-			table.insert(lines, line)
+		local ok, output = pub.read_file(file_path)
+		if not ok then
+			wezterm.emit("resurrect.error", "Failed to read state: " .. tostring(output))
+			wezterm.log_error("Failed to read state: " .. tostring(output))
+			return nil
 		end
-		json = table.concat(lines)
+		json = output:gsub("[\r\n]", "")
 	end
 	if not json then
 		return nil
 	end
 	json = sanitize_json(json)
 
-	return wezterm.json_parse(json)
+	local ok, state = pcall(wezterm.json_parse, json)
+	if not ok or type(state) ~= "table" then
+		wezterm.emit("resurrect.error", "Invalid json: " .. file_path)
+		wezterm.log_error("Invalid json: " .. file_path)
+		return nil
+	end
+	return state
 end
 
 return pub

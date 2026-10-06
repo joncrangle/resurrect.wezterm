@@ -43,6 +43,9 @@ end
 ---@param window_state window_state
 ---@param opts? restore_opts
 function pub.restore_window(window, window_state, opts)
+	if window_state == nil then
+		return
+	end
 	wezterm.emit("resurrect.window_state.restore_window.start")
 	if opts == nil then
 		opts = {}

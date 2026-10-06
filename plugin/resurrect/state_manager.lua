@@ -23,26 +23,27 @@ end
 ---save state to a file
 ---@param state workspace_state | window_state | tab_state
 ---@param opt_name? string
+---@return boolean|nil
+---@return string|nil
 function pub.save_state(state, opt_name)
 	if state.window_states then
-		file_io.write_state(get_file_path(state.workspace, "workspace", opt_name), state, "workspace")
+		return file_io.write_state(get_file_path(state.workspace, "workspace", opt_name), state, "workspace")
 	elseif state.tabs then
-		file_io.write_state(get_file_path(state.title, "window", opt_name), state, "window")
+		return file_io.write_state(get_file_path(state.title, "window", opt_name), state, "window")
 	elseif state.pane_tree then
-		file_io.write_state(get_file_path(state.title, "tab", opt_name), state, "tab")
+		return file_io.write_state(get_file_path(state.title, "tab", opt_name), state, "tab")
 	end
 end
 
 ---Reads a file with the state
 ---@param name string
 ---@param type string
----@return table
+---@return table|nil
 function pub.load_state(name, type)
 	wezterm.emit("resurrect.state_manager.load_state.start", name, type)
 	local json = file_io.load_json(get_file_path(name, type))
 	if not json then
-		wezterm.emit("resurrect.error", "Invalid json: " .. get_file_path(name, type))
-		return {}
+		return nil
 	end
 	wezterm.emit("resurrect.state_manager.load_state.finished", name, type)
 	return json
@@ -115,7 +116,11 @@ function pub.resurrect_on_gui_startup()
 		local type = file:read("*line")
 		file:close()
 		if type == "workspace" then
-			require("resurrect.workspace_state").restore_workspace(pub.load_state(name, type), {
+			local state = pub.load_state(name, type)
+			if not state then
+				return
+			end
+			require("resurrect.workspace_state").restore_workspace(state, {
 				spawn_in_workspace = true,
 				relative = true,
 				restore_text = true,
@@ -128,15 +133,19 @@ function pub.resurrect_on_gui_startup()
 end
 
 ---@param file_path string
+---@return boolean
+---@return string|nil
 function pub.delete_state(file_path)
 	wezterm.emit("resurrect.state_manager.delete_state.start", file_path)
-	local path = pub.save_state_dir .. file_path
-	local success = os.remove(path)
+	local path = pub.save_state_dir .. utils.separator .. file_path
+	local success, err = os.remove(path)
 	if not success then
 		wezterm.emit("resurrect.error", "Failed to delete state: " .. path)
 		wezterm.log_error("Failed to delete state: " .. path)
+		return false, err
 	end
 	wezterm.emit("resurrect.state_manager.delete_state.finished", file_path)
+	return true
 end
 
 --- Merges user-supplied options with default options
@@ -151,7 +160,10 @@ function pub.change_state_save_dir(directory)
 	directory = directory:gsub("[/\\]+$", "")
 	local types = { "workspace", "window", "tab" }
 	for _, type in ipairs(types) do
-		utils.ensure_folder_exists(directory .. "/" .. type)
+		local success, err = utils.ensure_folder_exists(directory .. "/" .. type)
+		if not success then
+			error("Could not create state directory: " .. directory .. "/" .. type .. ": " .. tostring(err))
+		end
 	end
 	pub.save_state_dir = directory
 end

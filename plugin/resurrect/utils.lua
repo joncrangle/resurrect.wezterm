@@ -70,44 +70,29 @@ end
 
 -- Create the folder if it does not exist
 ---@param path string
+---@return boolean
+---@return string|nil
 function utils.ensure_folder_exists(path)
-	local sep
+	if os.rename(path, path) then
+		return true
+	end
+	local args
 	if utils.is_windows then
-		-- assuming path is non-windows and that windows paths have
-		-- inferior support for allowed characters
-		sep = "\\"
-		path = path:gsub("/", sep)
+		path = path:gsub("/", "\\")
+		args = {
+			"powershell.exe",
+			"-NoProfile",
+			"-NonInteractive",
+			"-Command",
+			"$ErrorActionPreference = 'Stop'; New-Item -ItemType Directory -Force -LiteralPath '"
+				.. path:gsub("'", "''")
+				.. "' | Out-Null",
+		}
 	else
-		sep = "/"
+		args = { "mkdir", "-p", path }
 	end
-
-	local parts = {}
-	for part in string.gmatch(path, "[^" .. sep .. "]+") do
-		table.insert(parts, part)
-	end
-
-	local current = ""
-	for i, part in ipairs(parts) do
-		current = current == "" and part or (current .. sep .. part)
-
-		-- Check if the folder exists by attempting rename
-		local ok = os.rename(current, current)
-		if not ok then
-			-- Pure Lua "mkdir" using io.open
-			-- Create a temp file inside the directory to force the folder to exist
-			local tmp = current .. sep .. ".mkdir_tmp"
-			local f = io.open(tmp, "w")
-			if f then
-				f:close()
-				os.remove(tmp)
-			else
-				-- directory creation failed
-				return false
-			end
-		end
-	end
-
-	return true
+	local success, _, stderr = wezterm.run_child_process(args)
+	return success, not success and stderr or nil
 end
 
 -- deep copy
